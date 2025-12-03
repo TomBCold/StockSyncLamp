@@ -1,44 +1,60 @@
 -- Структура таблицы для хранения остатков товаров из МойСклад
 -- Таблица: bi_test
+-- СУБД: Microsoft SQL Server
 
 -- Создание базы данных (если не существует)
-CREATE DATABASE IF NOT EXISTS stock_sync CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Раскомментируйте если нужно создать БД:
+-- CREATE DATABASE stock_sync;
+-- GO
 
 USE stock_sync;
+GO
 
 -- Удаление таблицы если существует (опционально, для пересоздания)
 -- DROP TABLE IF EXISTS bi_test;
+-- GO
 
 -- Таблица остатков товаров из МойСклад
-CREATE TABLE IF NOT EXISTS bi_test (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT 'ID записи (автоинкремент)',
-  
-  -- Идентификаторы
-  id_prod VARCHAR(36) NOT NULL COMMENT 'ID товара из МойСклад (UUID)',
-  id_warehouse VARCHAR(36) NOT NULL COMMENT 'ID склада из МойСклад (UUID)',
-  
-  -- Дата синхронизации
-  date DATETIME NOT NULL COMMENT 'Дата и время синхронизации',
-  
-  -- Остатки
-  qty_stock INT DEFAULT 0 COMMENT 'Остаток на складе (stock)',
-  qty_reserved INT DEFAULT 0 COMMENT 'Зарезервировано (reserve)',
-  qty_available INT DEFAULT 0 COMMENT 'Доступно (quantity)',
-  qty_in_transit INT DEFAULT 0 COMMENT 'В пути (inTransit)',
-  
-  -- Финансовые данные
-  avg_cost INT DEFAULT 0 COMMENT 'Средняя стоимость (price/100)',
-  
-  -- Аналитика
-  days_on_stock INT DEFAULT 0 COMMENT 'Дней на складе (stockDays)',
-  
-  -- Индексы для оптимизации запросов
-  INDEX idx_id_prod (id_prod),
-  INDEX idx_id_warehouse (id_warehouse),
-  INDEX idx_date (date),
-  INDEX idx_warehouse_date (id_warehouse, date),
-  INDEX idx_prod_warehouse (id_prod, id_warehouse)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Остатки товаров из МойСклад';
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'bi_test')
+BEGIN
+    CREATE TABLE bi_test (
+        -- ID записи (автоинкремент)
+        id BIGINT IDENTITY(1,1) PRIMARY KEY,
+        
+        -- Идентификаторы
+        id_prod VARCHAR(36) NOT NULL,
+        id_warehouse VARCHAR(36) NOT NULL,
+        
+        -- Дата синхронизации
+        [date] DATETIME2 NOT NULL,
+        
+        -- Остатки
+        qty_stock INT DEFAULT 0,
+        qty_reserved INT DEFAULT 0,
+        qty_available INT DEFAULT 0,
+        qty_in_transit INT DEFAULT 0,
+        
+        -- Финансовые данные
+        avg_cost INT DEFAULT 0,
+        
+        -- Аналитика
+        days_on_stock INT DEFAULT 0
+    );
+    
+    -- Индексы для оптимизации запросов
+    CREATE INDEX idx_id_prod ON bi_test(id_prod);
+    CREATE INDEX idx_id_warehouse ON bi_test(id_warehouse);
+    CREATE INDEX idx_date ON bi_test([date]);
+    CREATE INDEX idx_warehouse_date ON bi_test(id_warehouse, [date]);
+    CREATE INDEX idx_prod_warehouse ON bi_test(id_prod, id_warehouse);
+    
+    PRINT 'Таблица bi_test успешно создана';
+END
+ELSE
+BEGIN
+    PRINT 'Таблица bi_test уже существует';
+END
+GO
 
 -- Примечания:
 -- 1. id_prod извлекается из meta.href после /entity/product/ и до ?

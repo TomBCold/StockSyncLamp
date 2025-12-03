@@ -37,14 +37,16 @@ class SyncService {
   /**
    * Извлечение ID товара из href
    * @param {string} href - URL вида "https://api.moysklad.ru/api/remap/1.2/entity/product/UUID?expand=supplier"
-   * @returns {string|null} - UUID товара или null
+   *                        или "https://api.moysklad.ru/api/remap/1.2/entity/variant/UUID?expand=product"
+   * @returns {string|null} - UUID товара/варианта или null
    */
   extractProductId(href) {
     if (!href) return null;
     
-    // Извлекаем ID из URL после /entity/product/ и до ? (или до конца строки)
-    const match = href.match(/\/entity\/product\/([a-f0-9-]+)(\?|$)/i);
-    return match ? match[1] : null;
+    // Извлекаем ID из URL после /entity/product/ или /entity/variant/ и до ? (или до конца строки)
+    // Поддерживаем оба типа: product и variant
+    const match = href.match(/\/entity\/(product|variant)\/([a-f0-9-]+)(\?|$)/i);
+    return match ? match[2] : null;
   }
 
   /**
@@ -62,7 +64,6 @@ class SyncService {
       console.warn('Не удалось извлечь ID товара из:', item.meta?.href);
       return null;
     }
-
     return {
       idProd: productId,
       idWarehouse: warehouseId,
