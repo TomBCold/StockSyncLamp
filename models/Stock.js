@@ -74,7 +74,7 @@ module.exports = (sequelize, Sequelize) => {
       comment: 'Дней на складе (stockDays)'
     }
   }, {
-    tableName: 'bi_test',
+    tableName: 'pbi_test',
     timestamps: false,
     indexes: [
       { fields: ['id_prod'] },
