@@ -1,12 +1,18 @@
 require('dotenv').config();
 const express = require('express');
 const cron = require('node-cron');
+const parser = require('cron-parser');
 const db = require('./models');
 const syncService = require('./services/syncService');
 const logger = require('./utils/logger');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Глобальная переменная для хранения cron task
+let cronTask = null;
+let cronSchedule = null;
+let cronInitialized = false;
 
 // Middleware
 app.use(express.json());
@@ -43,10 +49,53 @@ app.get('/', (req, res) => {
 // Health check
 app.get('/health', async (req, res) => {
   const dbStatus = await checkDatabaseConnection();
+  
+  // Информация о расписании cron
+  let cronInfo = {
+    enabled: false,
+    schedule: null,
+    nextRun: null,
+    timezone: process.env.TZ || 'system'
+  };
+
+  if (cronInitialized && cronSchedule) {
+    try {
+      // Проверяем валидность расписания
+      const isValid = cron.validate(cronSchedule);
+      
+      if (isValid) {
+        // Вычисляем следующее время запуска
+        const interval = parser.parseExpression(cronSchedule, {
+          tz: process.env.TZ || undefined
+        });
+        const nextDate = interval.next().toDate();
+        
+        cronInfo = {
+          enabled: true,
+          schedule: cronSchedule,
+          scheduleDescription: getCronDescription(cronSchedule),
+          nextRun: nextDate.toISOString(),
+          nextRunLocal: nextDate.toLocaleString('ru-RU', { 
+            timeZone: process.env.TZ || 'Europe/Moscow' 
+          }),
+          timezone: process.env.TZ || 'Europe/Moscow'
+        };
+      } else {
+        cronInfo.enabled = false;
+        cronInfo.error = 'Неверный формат расписания';
+      }
+    } catch (error) {
+      cronInfo.enabled = false;
+      cronInfo.error = error.message;
+    }
+  }
+
   res.json({
     status: 'ok',
     database: dbStatus ? 'connected' : 'disconnected',
-    timestamp: new Date().toISOString()
+    cron: cronInfo,
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
   });
 });
 
@@ -85,13 +134,50 @@ app.get('/sync/status', (req, res) => {
   });
 });
 
+// Функция для описания расписания cron
+function getCronDescription(schedule) {
+  const descriptions = {
+    '0 0 * * *': 'Каждый день в полночь (00:00)',
+    '0 2 * * *': 'Каждый день в 2:00',
+    '0 */6 * * *': 'Каждые 6 часов',
+    '*/5 * * * *': 'Каждые 5 минут',
+    '*/15 * * * *': 'Каждые 15 минут',
+    '0 */12 * * *': 'Каждые 12 часов',
+    '30 8 * * 1-5': 'В 8:30 по будням'
+  };
+  
+  return descriptions[schedule] || 'Пользовательское расписание';
+}
+
 // Настройка cron задачи
 function setupCronJob() {
-  const cronSchedule = process.env.CRON_SCHEDULE || '0 0 * * *'; // По умолчанию: каждый день в полночь
+  cronSchedule = process.env.CRON_SCHEDULE || '0 0 * * *'; // По умолчанию: каждый день в полночь
   
   logger.info(`Настройка cron задачи по расписанию: ${cronSchedule}`);
   
-  cron.schedule(cronSchedule, async () => {
+  // Проверяем валидность расписания
+  if (!cron.validate(cronSchedule)) {
+    logger.info(`ОШИБКА: Неверный формат cron расписания: ${cronSchedule}`);
+    logger.info('Используйте формат: минута час день месяц день_недели');
+    logger.info('Пример: 0 0 * * * (каждый день в полночь)');
+    cronInitialized = false;
+    return;
+  }
+  
+  try {
+    // Вычисляем и логируем следующий запуск
+    const interval = parser.parseExpression(cronSchedule, {
+      tz: process.env.TZ || undefined
+    });
+    const nextRun = interval.next().toDate();
+    
+    logger.info(`Описание расписания: ${getCronDescription(cronSchedule)}`);
+    logger.info(`Следующий запуск: ${nextRun.toLocaleString('ru-RU', { timeZone: process.env.TZ || 'Europe/Moscow' })}`);
+  } catch (error) {
+    logger.info(`Ошибка парсинга расписания: ${error.message}`);
+  }
+  
+  cronTask = cron.schedule(cronSchedule, async () => {
     logger.info('Запущена автоматическая синхронизация по расписанию');
     try {
       const result = await syncService.syncAll();
@@ -101,6 +187,7 @@ function setupCronJob() {
     }
   });
 
+  cronInitialized = true;
   logger.info('Cron задача успешно настроена');
 }
 

@@ -111,7 +111,33 @@ Invoke-WebRequest -Uri "http://192.168.1.100:3000/health" -Method GET
 {
   "status": "ok",
   "database": "connected",
-  "timestamp": "2024-12-02T10:00:00.000Z"
+  "cron": {
+    "enabled": true,
+    "schedule": "0 0 * * *",
+    "scheduleDescription": "Каждый день в полночь (00:00)",
+    "nextRun": "2025-12-03T00:00:00.000Z",
+    "nextRunLocal": "03.12.2025, 00:00:00",
+    "timezone": "Europe/Moscow"
+  },
+  "timestamp": "2025-12-02T15:30:00.000Z",
+  "uptime": 3600
+}
+```
+
+**Если cron не настроен или ошибка:**
+```json
+{
+  "status": "ok",
+  "database": "connected",
+  "cron": {
+    "enabled": false,
+    "schedule": null,
+    "nextRun": null,
+    "timezone": "system",
+    "error": "Неверный формат расписания"
+  },
+  "timestamp": "2025-12-02T15:30:00.000Z",
+  "uptime": 3600
 }
 ```
 

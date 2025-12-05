@@ -49,25 +49,60 @@ npm start
 
 ### Автоматический запуск при старте Windows
 
-Рекомендуется использовать PM2:
+**⚠️ Важно:** Команда `pm2 startup` НЕ работает на Windows! Используйте один из вариантов ниже:
 
-1. Установите PM2 глобально:
+#### Вариант 1: pm2-windows-startup (Рекомендуется для PM2)
+
+1. Установите pm2-windows-startup глобально:
 ```cmd
 npm install -g pm2
+npm install -g pm2-windows-startup
 ```
 
-2. Запустите сервис через PM2:
+2. Настройте автозапуск:
+```cmd
+pm2-windows-startup install
+```
+
+3. Запустите сервис:
 ```cmd
 pm2 start server.js --name stock-sync
-```
-
-3. Настройте автозапуск:
-```cmd
 pm2 save
-pm2 startup
 ```
 
-4. Выполните команду, которую выдаст PM2 (скопируйте и вставьте в командную строку с правами администратора)
+Готово! Сервис будет запускаться автоматически при старте Windows.
+
+#### Вариант 2: node-windows (Windows Service) - Рекомендуется!
+
+Используйте встроенный скрипт для создания Windows Service:
+
+1. Откройте PowerShell или CMD **от имени администратора**
+2. Установите node-windows:
+```cmd
+npm install -g node-windows
+```
+
+3. Запустите установку:
+```cmd
+npm run install:service
+```
+
+Сервис будет установлен и запущен автоматически!
+
+**Для удаления службы:**
+```cmd
+npm run uninstall:service
+```
+
+#### Вариант 3: Task Scheduler (Планировщик заданий)
+
+1. Откройте Task Scheduler (Планировщик заданий)
+2. Создайте новую задачу:
+   - Триггер: При входе в систему
+   - Действие: Запустить программу
+   - Программа: `node`
+   - Аргументы: `C:\путь\к\проекту\server.js`
+   - Рабочая папка: `C:\путь\к\проекту`
 
 ### Альтернатива: Создание Windows службы
 
@@ -109,6 +144,19 @@ pm2 logs stock-sync
 ```cmd
 pm2 stop stock-sync
 pm2 delete stock-sync
+```
+
+### Если установлен как Windows Service (node-windows)
+```cmd
+npm run uninstall:service
+```
+
+### Если запущен через pm2-windows-startup
+```cmd
+pm2 stop stock-sync
+pm2 delete stock-sync
+pm2 save
+pm2-windows-startup uninstall
 ```
 
 ## Решение проблем

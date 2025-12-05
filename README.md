@@ -118,16 +118,37 @@ pm2 startup
 Информация о сервисе
 
 ### GET /health
-Проверка состояния сервиса и подключения к БД
+Проверка состояния сервиса, подключения к БД и расписания cron
 
 **Ответ:**
 ```json
 {
   "status": "ok",
   "database": "connected",
-  "timestamp": "2024-01-01T00:00:00.000Z"
+  "cron": {
+    "enabled": true,
+    "schedule": "0 0 * * *",
+    "scheduleDescription": "Каждый день в полночь (00:00)",
+    "nextRun": "2025-12-03T00:00:00.000Z",
+    "nextRunLocal": "03.12.2025, 00:00:00",
+    "timezone": "Europe/Moscow"
+  },
+  "timestamp": "2025-12-02T15:30:00.000Z",
+  "uptime": 3600
 }
 ```
+
+**Поля ответа:**
+- `status` - статус сервиса (ok/error)
+- `database` - статус подключения к БД (connected/disconnected)
+- `cron.enabled` - активно ли расписание (true/false)
+- `cron.schedule` - строка cron расписания
+- `cron.scheduleDescription` - описание расписания на русском
+- `cron.nextRun` - следующий запуск (ISO 8601)
+- `cron.nextRunLocal` - следующий запуск (локальное время)
+- `cron.timezone` - часовой пояс
+- `timestamp` - текущее время
+- `uptime` - время работы сервиса (секунды)
 
 ### POST /sync/manual
 Ручной запуск синхронизации
