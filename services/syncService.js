@@ -73,8 +73,8 @@ class SyncService {
       qtyReserved: Math.floor(item.reserve || 0),
       qtyAvailable: Math.floor(item.quantity || 0),
       qtyInTransit: Math.floor(item.inTransit || 0),
-      // Финансовые данные (price делим на 100 и приводим к int)
-      avgCost: Math.floor((item.price || 0) / 100),
+      // Финансовые данные (price делим на 100, сохраняем копейки в DECIMAL)
+      avgCost: ((item.price || 0) / 100).toFixed(2),
       // Аналитика (приводим к int)
       daysOnStock: Math.floor(item.stockDays || 0)
     };

@@ -21,12 +21,12 @@ module.exports = (sequelize, Sequelize) => {
       field: 'id_warehouse',
       comment: 'ID склада из МойСклад (UUID)'
     },
-    // Дата синхронизации
+    // Дата синхронизации (с часовым поясом)
     date: {
-      type: DataTypes.DATE,
+      type: 'DATETIMEOFFSET',
       allowNull: false,
       defaultValue: DataTypes.NOW,
-      comment: 'Дата и время синхронизации'
+      comment: 'Дата и время синхронизации с часовым поясом'
     },
     // Остатки
     qtyStock: {
@@ -59,11 +59,11 @@ module.exports = (sequelize, Sequelize) => {
     },
     // Финансовые данные
     avgCost: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.DECIMAL(9, 2),
       allowNull: true,
       defaultValue: 0,
       field: 'avg_cost',
-      comment: 'Средняя стоимость (price/100)'
+      comment: 'Средняя стоимость (price/100, с копейками)'
     },
     // Аналитика
     daysOnStock: {

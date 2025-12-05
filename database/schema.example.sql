@@ -22,12 +22,12 @@ BEGIN
         -- ID записи (автоинкремент)
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
         
-        -- Идентификаторы
-        id_prod VARCHAR(36) NOT NULL,
-        id_warehouse VARCHAR(36) NOT NULL,
+        -- Идентификаторы (NVARCHAR для Unicode)
+        id_prod NVARCHAR(36) NOT NULL,
+        id_warehouse NVARCHAR(36) NOT NULL,
         
-        -- Дата синхронизации
-        [date] DATETIME2 NOT NULL,
+        -- Дата синхронизации (с часовым поясом)
+        [date] DATETIMEOFFSET(7) NOT NULL,
         
         -- Остатки
         qty_stock INT DEFAULT 0,
@@ -35,8 +35,8 @@ BEGIN
         qty_available INT DEFAULT 0,
         qty_in_transit INT DEFAULT 0,
         
-        -- Финансовые данные
-        avg_cost INT DEFAULT 0,
+        -- Финансовые данные (DECIMAL для хранения копеек)
+        avg_cost DECIMAL(9, 2) DEFAULT 0,
         
         -- Аналитика
         days_on_stock INT DEFAULT 0

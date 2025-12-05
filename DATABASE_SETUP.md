@@ -53,14 +53,14 @@ await db.sequelize.sync({ alter: true });
 | Поле | Тип | Описание | Источник из API |
 |------|-----|----------|-----------------|
 | `id` | BIGINT | ID записи (автоинкремент) | - |
-| `id_prod` | VARCHAR(36) | ID товара (UUID) | Извлекается из `meta.href` |
-| `id_warehouse` | VARCHAR(36) | ID склада (UUID) | ID склада из запроса |
-| `date` | DATETIME | Дата/время синхронизации | Текущая дата/время |
+| `id_prod` | NVARCHAR(36) | ID товара (UUID) | Извлекается из `meta.href` |
+| `id_warehouse` | NVARCHAR(36) | ID склада (UUID) | ID склада из запроса |
+| `date` | DATETIMEOFFSET(7) | Дата/время с часовым поясом | Текущая дата/время |
 | `qty_stock` | INT | Остаток на складе | `stock` (приведено к INT) |
 | `qty_reserved` | INT | Зарезервировано | `reserve` (приведено к INT) |
 | `qty_available` | INT | Доступно | `quantity` (приведено к INT) |
 | `qty_in_transit` | INT | В пути | `inTransit` (приведено к INT) |
-| `avg_cost` | INT | Средняя стоимость | `price / 100` (приведено к INT) |
+| `avg_cost` | DECIMAL(9,2) | Средняя стоимость с копейками | `price / 100` (с 2 знаками) |
 | `days_on_stock` | INT | Дней на складе | `stockDays` (приведено к INT) |
 
 ---
