@@ -112,16 +112,39 @@ class SyncService {
 
       logger.info(`Подготовлено ${recordsToInsert.length} записей для вставки в БД`);
 
+      // Логируем пример первой записи для отладки
+      console.log('Пример данных для вставки:', JSON.stringify(recordsToInsert[0], null, 2));
+
       // Запись в БД (пакетная вставка)
-      await db.Stock.bulkCreate(recordsToInsert, {
+      logger.info('Начало вставки в БД...');
+      const insertedRecords = await db.Stock.bulkCreate(recordsToInsert, {
         validate: true,
-        ignoreDuplicates: false
+        ignoreDuplicates: false,
+        returning: true, // Вернуть вставленные записи
+        logging: console.log // Логировать SQL запросы
       });
 
-      logger.log(warehouseId, true, recordsToInsert.length);
-      logger.info(`Успешно записано ${recordsToInsert.length} записей для склада ${warehouseId}`);
+      logger.info(`bulkCreate завершен. Вставлено записей: ${insertedRecords.length}`);
+
+      // Проверка: запрашиваем количество записей в БД для этого склада
+      const count = await db.Stock.count({
+        where: {
+          idWarehouse: warehouseId,
+          date: currentDate
+        }
+      });
+
+      logger.info(`Проверка: найдено ${count} записей в БД для склада ${warehouseId} с датой ${currentDate.toISOString()}`);
+
+      if (count === 0) {
+        logger.log(warehouseId, false, 0, 'Записи не найдены в БД после вставки!');
+        return { success: false, recordCount: 0, error: 'Данные не сохранились в БД' };
+      }
+
+      logger.log(warehouseId, true, count);
+      logger.info(`Успешно записано ${count} записей для склада ${warehouseId}`);
       
-      return { success: true, recordCount: recordsToInsert.length, error: '' };
+      return { success: true, recordCount: count, error: '' };
     } catch (error) {
       logger.log(warehouseId, false, 0, error.message);
       console.error(`Ошибка синхронизации склада ${warehouseId}:`, error);

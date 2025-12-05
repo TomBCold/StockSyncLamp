@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "test:api": "node test/testApi.js",
     "test:db": "node test/testDatabase.js",
+    "check:data": "node test/checkData.js",
     "install:service": "node install-service-windows.js",
     "uninstall:service": "node uninstall-service-windows.js"
   },
