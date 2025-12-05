@@ -45,7 +45,10 @@ await db.sequelize.sync({ alter: true });
 
 ---
 
-## Структура таблицы bi_test
+## Структура таблицы dbo.pbi_test
+
+**Полный путь:** `[database].dbo.pbi_test`  
+**Схема:** `dbo` (database owner - схема по умолчанию)
 
 | Поле | Тип | Описание | Источник из API |
 |------|-----|----------|-----------------|
@@ -109,39 +112,37 @@ npm run test:db
 
 ### Получить все записи по складу
 ```sql
-SELECT * FROM bi_test 
+SELECT TOP 100 * FROM dbo.pbi_test 
 WHERE id_warehouse = '6599a08d-9475-4601-8518-d6175cf12aeb'
-ORDER BY date DESC
-LIMIT 100;
+ORDER BY [date] DESC;
 ```
 
 ### Получить последние остатки по товару
 ```sql
-SELECT * FROM bi_test 
+SELECT TOP 10 * FROM dbo.pbi_test 
 WHERE id_prod = 'ead24d29-685f-11ea-0a80-009f000b0e46'
-ORDER BY date DESC
-LIMIT 10;
+ORDER BY [date] DESC;
 ```
 
 ### Статистика по складу за дату
 ```sql
 SELECT 
-  DATE(date) as sync_date,
+  CAST([date] AS DATE) as sync_date,
   COUNT(*) as total_products,
   SUM(qty_stock) as total_stock,
   SUM(qty_available) as total_available
-FROM bi_test 
+FROM dbo.pbi_test 
 WHERE id_warehouse = '6599a08d-9475-4601-8518-d6175cf12aeb'
-  AND DATE(date) = '2025-12-02'
-GROUP BY DATE(date);
+  AND CAST([date] AS DATE) = '2025-12-02'
+GROUP BY CAST([date] AS DATE);
 ```
 
 ### Товары с нулевыми остатками
 ```sql
-SELECT id_prod, id_warehouse, date
-FROM bi_test 
+SELECT id_prod, id_warehouse, [date]
+FROM dbo.pbi_test 
 WHERE qty_stock = 0
-  AND DATE(date) = CURDATE()
+  AND CAST([date] AS DATE) = CAST(GETDATE() AS DATE)
 ORDER BY id_prod;
 ```
 
@@ -177,18 +178,18 @@ ADD UNIQUE INDEX unique_prod_warehouse_date (id_prod, id_warehouse, date);
 
 ### Удалить все данные
 ```sql
-TRUNCATE TABLE bi_test;
+TRUNCATE TABLE dbo.pbi_test;
 ```
 
 ### Удалить данные старше N дней
 ```sql
-DELETE FROM bi_test 
-WHERE date < DATE_SUB(NOW(), INTERVAL 30 DAY);
+DELETE FROM dbo.pbi_test 
+WHERE [date] < DATEADD(DAY, -30, GETDATE());
 ```
 
 ### Удалить данные по конкретному складу
 ```sql
-DELETE FROM bi_test 
+DELETE FROM dbo.pbi_test 
 WHERE id_warehouse = '6599a08d-9475-4601-8518-d6175cf12aeb';
 ```
 
@@ -196,14 +197,21 @@ WHERE id_warehouse = '6599a08d-9475-4601-8518-d6175cf12aeb';
 
 ## Резервное копирование
 
-### Создать резервную копию
-```bash
-mysqldump -u root -p stock_sync bi_test > backup_bi_test.sql
+### Создать резервную копию (MS SQL)
+```sql
+BACKUP DATABASE stock_sync 
+TO DISK = 'C:\Backup\stock_sync.bak'
+WITH FORMAT, INIT;
 ```
 
-### Восстановить из резервной копии
-```bash
-mysql -u root -p stock_sync < backup_bi_test.sql
+### Восстановить из резервной копии (MS SQL)
+```sql
+USE master;
+GO
+RESTORE DATABASE stock_sync 
+FROM DISK = 'C:\Backup\stock_sync.bak'
+WITH REPLACE;
+GO
 ```
 
 ---
@@ -212,11 +220,15 @@ mysql -u root -p stock_sync < backup_bi_test.sql
 
 ```sql
 SELECT 
-  table_name AS 'Table',
-  ROUND(((data_length + index_length) / 1024 / 1024), 2) AS 'Size (MB)',
-  table_rows AS 'Rows'
-FROM information_schema.TABLES 
-WHERE table_schema = 'stock_sync' 
-  AND table_name = 'bi_test';
+    SCHEMA_NAME(t.schema_id) + '.' + t.NAME AS TableName,
+    p.rows AS RowCounts,
+    SUM(a.total_pages) * 8 / 1024 AS TotalSpaceMB,
+    SUM(a.used_pages) * 8 / 1024 AS UsedSpaceMB
+FROM sys.tables t
+INNER JOIN sys.indexes i ON t.OBJECT_ID = i.object_id
+INNER JOIN sys.partitions p ON i.object_id = p.OBJECT_ID AND i.index_id = p.index_id
+INNER JOIN sys.allocation_units a ON p.partition_id = a.container_id
+WHERE t.NAME = 'pbi_test' AND t.schema_id = SCHEMA_ID('dbo')
+GROUP BY t.schema_id, t.Name, p.Rows;
 ```
 

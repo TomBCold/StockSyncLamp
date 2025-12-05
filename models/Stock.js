@@ -75,6 +75,7 @@ module.exports = (sequelize, Sequelize) => {
     }
   }, {
     tableName: 'pbi_test',
+    schema: 'dbo',
     timestamps: false,
     indexes: [
       { fields: ['id_prod'] },

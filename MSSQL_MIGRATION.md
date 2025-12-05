@@ -119,6 +119,9 @@ sqlcmd -S localhost -U sa -P YourPassword -d stock_sync -i database\schema.examp
 npm start
 ```
 
+**Примечание:** Таблица будет создана в схеме `dbo` (схема по умолчанию).  
+Полный путь: `[database].dbo.pbi_test`
+
 ---
 
 ## Различия в SQL синтаксисе
@@ -313,9 +316,11 @@ npm start
 
 ## Примеры SQL запросов (MS SQL)
 
+**Примечание:** Используется схема `dbo`, полный путь к таблице: `dbo.pbi_test`
+
 ### Получить все записи
 ```sql
-SELECT TOP 100 * FROM bi_test 
+SELECT TOP 100 * FROM dbo.pbi_test 
 ORDER BY [date] DESC;
 ```
 
@@ -326,7 +331,7 @@ SELECT
     COUNT(*) as total_products,
     SUM(qty_stock) as total_stock,
     SUM(qty_available) as total_available
-FROM bi_test 
+FROM dbo.pbi_test 
 WHERE id_warehouse = '6599a08d-9475-4601-8518-d6175cf12aeb'
     AND CAST([date] AS DATE) = CAST(GETDATE() AS DATE)
 GROUP BY CAST([date] AS DATE);
@@ -334,7 +339,7 @@ GROUP BY CAST([date] AS DATE);
 
 ### Очистка старых данных
 ```sql
-DELETE FROM bi_test 
+DELETE FROM dbo.pbi_test 
 WHERE [date] < DATEADD(DAY, -30, GETDATE());
 ```
 
@@ -367,7 +372,7 @@ GO
 ### Размер таблицы
 ```sql
 SELECT 
-    t.NAME AS TableName,
+    SCHEMA_NAME(t.schema_id) + '.' + t.NAME AS TableName,
     p.rows AS RowCounts,
     SUM(a.total_pages) * 8 / 1024 AS TotalSpaceMB,
     SUM(a.used_pages) * 8 / 1024 AS UsedSpaceMB
@@ -375,8 +380,8 @@ FROM sys.tables t
 INNER JOIN sys.indexes i ON t.OBJECT_ID = i.object_id
 INNER JOIN sys.partitions p ON i.object_id = p.OBJECT_ID AND i.index_id = p.index_id
 INNER JOIN sys.allocation_units a ON p.partition_id = a.container_id
-WHERE t.NAME = 'bi_test'
-GROUP BY t.Name, p.Rows;
+WHERE t.NAME = 'pbi_test' AND t.schema_id = SCHEMA_ID('dbo')
+GROUP BY t.schema_id, t.Name, p.Rows;
 ```
 
 ### Активные подключения

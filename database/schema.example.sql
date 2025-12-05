@@ -1,5 +1,5 @@
 -- Структура таблицы для хранения остатков товаров из МойСклад
--- Таблица: bi_test
+-- Таблица: dbo.pbi_test
 -- СУБД: Microsoft SQL Server
 
 -- Создание базы данных (если не существует)
@@ -11,13 +11,14 @@ USE stock_sync;
 GO
 
 -- Удаление таблицы если существует (опционально, для пересоздания)
--- DROP TABLE IF EXISTS bi_test;
+-- DROP TABLE IF EXISTS dbo.pbi_test;
 -- GO
 
 -- Таблица остатков товаров из МойСклад
-IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'bi_test')
+-- Полный путь: [database].dbo.pbi_test
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'pbi_test' AND schema_id = SCHEMA_ID('dbo'))
 BEGIN
-    CREATE TABLE bi_test (
+    CREATE TABLE dbo.pbi_test (
         -- ID записи (автоинкремент)
         id BIGINT IDENTITY(1,1) PRIMARY KEY,
         
@@ -42,18 +43,26 @@ BEGIN
     );
     
     -- Индексы для оптимизации запросов
-    CREATE INDEX idx_id_prod ON bi_test(id_prod);
-    CREATE INDEX idx_id_warehouse ON bi_test(id_warehouse);
-    CREATE INDEX idx_date ON bi_test([date]);
-    CREATE INDEX idx_warehouse_date ON bi_test(id_warehouse, [date]);
-    CREATE INDEX idx_prod_warehouse ON bi_test(id_prod, id_warehouse);
+    CREATE INDEX idx_id_prod ON dbo.pbi_test(id_prod);
+    CREATE INDEX idx_id_warehouse ON dbo.pbi_test(id_warehouse);
+    CREATE INDEX idx_date ON dbo.pbi_test([date]);
+    CREATE INDEX idx_warehouse_date ON dbo.pbi_test(id_warehouse, [date]);
+    CREATE INDEX idx_prod_warehouse ON dbo.pbi_test(id_prod, id_warehouse);
     
-    PRINT 'Таблица bi_test успешно создана';
+    PRINT 'Таблица dbo.pbi_test успешно создана';
 END
 ELSE
 BEGIN
-    PRINT 'Таблица bi_test уже существует';
+    PRINT 'Таблица dbo.pbi_test уже существует';
 END
+GO
+
+-- Проверка создания таблицы
+SELECT 
+    SCHEMA_NAME(schema_id) + '.' + name AS TableName,
+    create_date AS CreatedDate
+FROM sys.tables 
+WHERE name = 'pbi_test';
 GO
 
 -- Примечания:
