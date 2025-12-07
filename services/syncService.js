@@ -100,7 +100,9 @@ class SyncService {
       logger.info(`Получено ${stockData.length} записей из API для склада ${warehouseId}`);
 
       // Подготовка данных для записи в БД
-      const currentDate = new Date();
+      const systemDate = new Date();
+      // Добавляем 3 часа к системному времени (3 * 60 * 60 * 1000 миллисекунд)
+      const currentDate = new Date(systemDate.getTime() + (3 * 60 * 60 * 1000));
       const recordsToInsert = stockData
         .map(item => this.transformStockItem(item, warehouseId, currentDate))
         .filter(item => item !== null); // Убираем записи без ID товара
