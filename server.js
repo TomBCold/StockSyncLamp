@@ -41,6 +41,7 @@ app.get('/', (req, res) => {
     endpoints: {
       health: '/health',
       syncManual: '/sync/manual',
+      syncRetrospective: '/sync/retrospective',
       syncStatus: '/sync/status'
     }
   });
@@ -121,6 +122,52 @@ app.post('/sync/manual', async (req, res) => {
     logger.info(`Ошибка запуска синхронизации: ${error.message}`);
     res.status(500).json({
       error: 'Ошибка запуска синхронизации',
+      message: error.message
+    });
+  }
+});
+
+// Ретроспективная синхронизация за период
+app.post('/sync/retrospective', async (req, res) => {
+  try {
+    // Получаем даты из .env или из тела запроса
+    const startDate = req.body.startDate || process.env.RETRO_START_DATE;
+    const endDate = req.body.endDate || process.env.RETRO_END_DATE;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        error: 'Не указаны даты',
+        message: 'Укажите startDate и endDate в теле запроса или установите RETRO_START_DATE и RETRO_END_DATE в .env',
+        example: {
+          startDate: '2025-01-01',
+          endDate: '2025-01-31'
+        }
+      });
+    }
+
+    logger.info(`Запущена ретроспективная синхронизация с ${startDate} по ${endDate}`);
+    
+    // Запускаем синхронизацию асинхронно
+    syncService.syncRetrospective(startDate, endDate)
+      .then(result => {
+        logger.info(`Ретроспективная синхронизация завершена: ${JSON.stringify(result)}`);
+      })
+      .catch(error => {
+        logger.info(`Ошибка при ретроспективной синхронизации: ${error.message}`);
+      });
+
+    res.json({
+      message: 'Ретроспективная синхронизация запущена',
+      period: {
+        startDate: startDate,
+        endDate: endDate
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.info(`Ошибка запуска ретроспективной синхронизации: ${error.message}`);
+    res.status(500).json({
+      error: 'Ошибка запуска ретроспективной синхронизации',
       message: error.message
     });
   }

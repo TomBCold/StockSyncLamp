@@ -28,6 +28,13 @@ module.exports = (sequelize, Sequelize) => {
       defaultValue: DataTypes.NOW,
       comment: 'Дата и время синхронизации с часовым поясом'
     },
+    // Дата остатка (за какую дату этот остаток из API)
+    stockDate: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'stock_date',
+      comment: 'Дата и время остатка (из параметра moment API)'
+    },
     // Остатки
     qtyStock: {
       type: DataTypes.INTEGER,

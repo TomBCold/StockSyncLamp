@@ -29,6 +29,9 @@ BEGIN
         -- Дата синхронизации (с часовым поясом)
         [date] DATETIMEOFFSET(7) NOT NULL,
         
+        -- Дата и время остатка (за какую дату/время этот остаток)
+        stock_date DATETIME2 NULL,
+        
         -- Остатки
         qty_stock INT DEFAULT 0,
         qty_reserved INT DEFAULT 0,
@@ -46,7 +49,9 @@ BEGIN
     CREATE INDEX idx_id_prod ON dbo.pbi_test(id_prod);
     CREATE INDEX idx_id_warehouse ON dbo.pbi_test(id_warehouse);
     CREATE INDEX idx_date ON dbo.pbi_test([date]);
+    CREATE INDEX idx_stock_date ON dbo.pbi_test(stock_date);
     CREATE INDEX idx_warehouse_date ON dbo.pbi_test(id_warehouse, [date]);
+    CREATE INDEX idx_warehouse_stock_date ON dbo.pbi_test(id_warehouse, stock_date);
     CREATE INDEX idx_prod_warehouse ON dbo.pbi_test(id_prod, id_warehouse);
     
     PRINT 'Таблица dbo.pbi_test успешно создана';

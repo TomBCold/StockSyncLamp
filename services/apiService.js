@@ -30,14 +30,17 @@ class ApiService {
   /**
    * Формирование фильтра для запроса остатков
    * @param {string} warehouseId - ID склада
+   * @param {string} moment - Момент времени (опционально)
    * @returns {string} - Строка фильтра
    */
-  buildFilter(warehouseId) {
+  buildFilter(warehouseId, moment = null) {
     const filters = [];
     
-    // Момент времени (текущая дата/время или из .env)
-    const moment = process.env.API_MOMENT || new Date().toISOString().replace('T', ' ').substring(0, 19);
-    filters.push(`moment=${moment}`);
+    // Момент времени (из параметра, .env или текущая дата/время)
+    const momentTime = moment 
+      || process.env.API_MOMENT 
+      || new Date().toISOString().replace('T', ' ').substring(0, 19);
+    filters.push(`moment=${momentTime}`);
     
     // Включить архивные и неархивные товары
     filters.push('archived=false');
@@ -110,6 +113,74 @@ class ApiService {
       return allData;
     } catch (error) {
       console.error(`Ошибка получения данных для склада ${warehouseId}:`, error.message);
+      if (error.response) {
+        console.error(`Статус ответа: ${error.response.status}`);
+        console.error(`Данные ответа:`, error.response.data);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Получение данных по остаткам для конкретного склада за определенную дату
+   * @param {string} warehouseId - ID (код) склада
+   * @param {string} dateTime - Дата и время в формате YYYY-MM-DD HH:MM
+   * @returns {Promise<Array>} - Массив данных об остатках
+   */
+  async getStockDataForDate(warehouseId, dateTime) {
+    try {
+      let allData = [];
+      let offset = 0;
+      const limit = 1000;
+      let hasMoreData = true;
+
+      // Формируем момент времени с секундами (если не указаны)
+      const moment = dateTime.includes(':') 
+        ? `${dateTime}:00`  // Если есть HH:MM, добавляем :00
+        : `${dateTime} 07:00:00`;  // Если только дата, добавляем 07:00:00
+
+      // Формируем фильтр с указанной датой
+      const filter = this.buildFilter(warehouseId, moment);
+
+      console.log(`Запрос данных для склада ${warehouseId} за ${dateTime}`);
+      console.log(`Фильтр: ${filter}`);
+
+      while (hasMoreData) {
+        const response = await axios.get(this.apiUrl, {
+          headers: {
+            'Authorization': this.getAuthHeader(),
+            'Content-Type': 'application/json',
+            'Accept-Encoding': 'gzip'
+          },
+          params: {
+            filter: filter,
+            offset: offset,
+            limit: limit
+          }
+        });
+
+        if (response.data && response.data.rows && Array.isArray(response.data.rows)) {
+          allData = allData.concat(response.data.rows);
+          hasMoreData = response.data.rows.length >= limit;
+          offset += limit;
+        } else if (response.data && Array.isArray(response.data)) {
+          allData = allData.concat(response.data);
+          hasMoreData = response.data.length >= limit;
+          offset += limit;
+        } else {
+          hasMoreData = false;
+        }
+
+        if (offset > 100000) {
+          console.warn(`Достигнут лимит записей (100000) для склада ${warehouseId} за ${dateTime}`);
+          break;
+        }
+      }
+
+      console.log(`Получено ${allData.length} записей для склада ${warehouseId} за ${dateTime}`);
+      return allData;
+    } catch (error) {
+      console.error(`Ошибка получения данных для склада ${warehouseId} за ${dateTime}:`, error.message);
       if (error.response) {
         console.error(`Статус ответа: ${error.response.status}`);
         console.error(`Данные ответа:`, error.response.data);

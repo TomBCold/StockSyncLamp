@@ -54,9 +54,10 @@ class SyncService {
    * @param {Object} item - Элемент из API
    * @param {string} warehouseId - ID склада
    * @param {Date} syncDate - Дата синхронизации
+   * @param {string} stockDate - Дата остатка (опционально, для ретроспективы)
    * @returns {Object} - Данные для записи в БД
    */
-  transformStockItem(item, warehouseId, syncDate) {
+  transformStockItem(item, warehouseId, syncDate, stockDate = null) {
     // Извлекаем ID товара из href
     const productId = this.extractProductId(item.meta?.href);
     
@@ -68,6 +69,7 @@ class SyncService {
       idProd: productId,
       idWarehouse: warehouseId,
       date: syncDate,
+      stockDate: stockDate, // Дата остатка (для ретроспективы)
       // Остатки (приводим к целым числам)
       qtyStock: Math.floor(item.stock || 0),
       qtyReserved: Math.floor(item.reserve || 0),
@@ -193,6 +195,155 @@ class SyncService {
     logger.info(`=== Синхронизация завершена. Всего: ${summary.total}, Успешно: ${summary.success}, Ошибок: ${summary.failed} ===`);
 
     return summary;
+  }
+
+  /**
+   * Ретроспективная синхронизация за период
+   * @param {string} startDate - Начальная дата (YYYY-MM-DD)
+   * @param {string} endDate - Конечная дата (YYYY-MM-DD)
+   * @returns {Promise<Object>} - Результаты синхронизации
+   */
+  async syncRetrospective(startDate, endDate) {
+    logger.info(`=== Начало ретроспективной синхронизации с ${startDate} по ${endDate} ===`);
+
+    const warehouses = this.readWarehouses();
+
+    if (warehouses.length === 0) {
+      logger.info('Список складов пуст. Ретроспективная синхронизация не выполнена.');
+      return { total: 0, success: 0, failed: 0, dates: [], results: [] };
+    }
+
+    // Генерируем массив дат
+    const dates = this.generateDateRange(startDate, endDate);
+    logger.info(`Будет обработано ${dates.length} дат для ${warehouses.length} складов`);
+
+    const results = [];
+    let successCount = 0;
+    let failedCount = 0;
+    let totalRecords = 0;
+
+    // Итерируемся по датам
+    for (const date of dates) {
+      logger.info(`\n--- Обработка даты: ${date} ---`);
+      
+      // Для каждой даты обрабатываем все склады
+      for (const warehouse of warehouses) {
+        try {
+          const result = await this.syncWarehouseForDate(warehouse, date);
+          results.push({ warehouse, date, ...result });
+          
+          if (result.success) {
+            successCount++;
+            totalRecords += result.recordCount;
+          } else {
+            failedCount++;
+          }
+        } catch (error) {
+          logger.log(warehouse, false, 0, `Ошибка для даты ${date}: ${error.message}`);
+          failedCount++;
+        }
+      }
+    }
+
+    const summary = {
+      total: dates.length * warehouses.length,
+      success: successCount,
+      failed: failedCount,
+      totalRecords: totalRecords,
+      dates: dates,
+      warehouses: warehouses.length,
+      results: results
+    };
+
+    logger.info(`\n=== Ретроспективная синхронизация завершена ===`);
+    logger.info(`Дат: ${dates.length}, Складов: ${warehouses.length}`);
+    logger.info(`Успешно: ${summary.success}, Ошибок: ${summary.failed}`);
+    logger.info(`Всего записей: ${summary.totalRecords}`);
+
+    return summary;
+  }
+
+  /**
+   * Синхронизация данных для одного склада за конкретную дату
+   * @param {string} warehouseId - ID склада
+   * @param {string} dateTime - Дата и время в формате YYYY-MM-DD HH:MM
+   * @returns {Promise<{success: boolean, recordCount: number, error: string}>}
+   */
+  async syncWarehouseForDate(warehouseId, dateTime) {
+    try {
+      logger.info(`Запрос данных для склада ${warehouseId} за ${dateTime}`);
+      
+      // Получение данных из API за конкретную дату
+      const stockData = await apiService.getStockDataForDate(warehouseId, dateTime);
+
+      if (!stockData || stockData.length === 0) {
+        logger.log(warehouseId, true, 0, `Нет данных за ${dateTime}`);
+        return { success: true, recordCount: 0, error: 'Нет данных' };
+      }
+
+      logger.info(`Получено ${stockData.length} записей из API для склада ${warehouseId} за ${dateTime}`);
+
+      // Подготовка данных для записи в БД
+      const currentDate = new Date();
+      const stockDateObj = new Date(dateTime); // Преобразуем в Date объект
+      const recordsToInsert = stockData
+        .map(item => this.transformStockItem(item, warehouseId, currentDate, stockDateObj))
+        .filter(item => item !== null);
+
+      if (recordsToInsert.length === 0) {
+        logger.log(warehouseId, false, 0, `Не удалось обработать данные за ${dateTime}`);
+        return { success: false, recordCount: 0, error: 'Не удалось обработать данные' };
+      }
+
+      logger.info(`Подготовлено ${recordsToInsert.length} записей для вставки за ${dateTime}`);
+
+      // Запись в БД
+      const insertedRecords = await db.Stock.bulkCreate(recordsToInsert, {
+        validate: true,
+        ignoreDuplicates: false,
+        returning: false
+      });
+
+      logger.info(`Записано ${recordsToInsert.length} записей для склада ${warehouseId} за ${dateTime}`);
+      logger.log(warehouseId, true, recordsToInsert.length, `За дату ${dateTime}`);
+      
+      return { success: true, recordCount: recordsToInsert.length, error: '' };
+    } catch (error) {
+      logger.log(warehouseId, false, 0, `${dateTime}: ${error.message}`);
+      console.error(`Ошибка синхронизации склада ${warehouseId} за ${dateTime}:`, error);
+      return { success: false, recordCount: 0, error: error.message };
+    }
+  }
+
+  /**
+   * Генерация массива дат между начальной и конечной датой
+   * @param {string} startDate - Начальная дата (YYYY-MM-DD)
+   * @param {string} endDate - Конечная дата (YYYY-MM-DD)
+   * @returns {Array<string>} - Массив дат в формате YYYY-MM-DD HH:MM
+   */
+  generateDateRange(startDate, endDate) {
+    const dates = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Проверка корректности дат
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new Error('Неверный формат даты. Используйте YYYY-MM-DD');
+    }
+
+    if (start > end) {
+      throw new Error('Начальная дата не может быть больше конечной');
+    }
+
+    // Генерируем массив дат с временем 07:00
+    const current = new Date(start);
+    while (current <= end) {
+      const dateStr = current.toISOString().split('T')[0] + ' 07:00'; // YYYY-MM-DD 07:00
+      dates.push(dateStr);
+      current.setDate(current.getDate() + 1);
+    }
+
+    return dates;
   }
 }
 
