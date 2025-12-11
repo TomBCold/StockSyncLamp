@@ -285,7 +285,15 @@ class SyncService {
 
       // Подготовка данных для записи в БД
       const currentDate = new Date();
-      const stockDateObj = new Date(dateTime); // Преобразуем в Date объект
+      
+      // Правильно парсим дату: добавляем секунды если их нет
+      const dateTimeWithSeconds = dateTime.includes(':') && dateTime.split(':').length === 2
+        ? `${dateTime}:00`  // 2025-10-01 07:00 -> 2025-10-01 07:00:00
+        : dateTime;
+      
+      // Преобразуем в ISO формат для корректной работы с MS SQL
+      const stockDateObj = new Date(dateTimeWithSeconds.replace(' ', 'T')); // 2025-10-01T07:00:00
+      
       const recordsToInsert = stockData
         .map(item => this.transformStockItem(item, warehouseId, currentDate, stockDateObj))
         .filter(item => item !== null);
@@ -319,12 +327,12 @@ class SyncService {
    * Генерация массива дат между начальной и конечной датой
    * @param {string} startDate - Начальная дата (YYYY-MM-DD)
    * @param {string} endDate - Конечная дата (YYYY-MM-DD)
-   * @returns {Array<string>} - Массив дат в формате YYYY-MM-DD HH:MM
+   * @returns {Array<string>} - Массив дат в формате YYYY-MM-DD HH:MM:SS
    */
   generateDateRange(startDate, endDate) {
     const dates = [];
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = new Date(startDate + 'T00:00:00'); // Правильный парсинг даты
+    const end = new Date(endDate + 'T00:00:00');
 
     // Проверка корректности дат
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
@@ -335,10 +343,10 @@ class SyncService {
       throw new Error('Начальная дата не может быть больше конечной');
     }
 
-    // Генерируем массив дат с временем 07:00
+    // Генерируем массив дат с временем 07:00:00
     const current = new Date(start);
     while (current <= end) {
-      const dateStr = current.toISOString().split('T')[0] + ' 07:00'; // YYYY-MM-DD 07:00
+      const dateStr = current.toISOString().split('T')[0] + ' 07:00:00'; // YYYY-MM-DD 07:00:00
       dates.push(dateStr);
       current.setDate(current.getDate() + 1);
     }

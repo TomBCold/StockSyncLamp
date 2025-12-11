@@ -135,9 +135,12 @@ class ApiService {
       let hasMoreData = true;
 
       // Формируем момент времени с секундами (если не указаны)
-      const moment = dateTime.includes(':') 
-        ? `${dateTime}:00`  // Если есть HH:MM, добавляем :00
-        : `${dateTime} 07:00:00`;  // Если только дата, добавляем 07:00:00
+      // Проверяем формат: если есть секунды - оставляем как есть, если нет - добавляем
+      const moment = dateTime.split(':').length === 3
+        ? dateTime  // Уже есть секунды: 2025-10-01 07:00:00
+        : dateTime.includes(':')
+          ? `${dateTime}:00`  // Есть HH:MM, добавляем :00
+          : `${dateTime} 07:00:00`;  // Только дата, добавляем 07:00:00
 
       // Формируем фильтр с указанной датой
       const filter = this.buildFilter(warehouseId, moment);

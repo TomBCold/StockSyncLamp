@@ -26,6 +26,7 @@ module.exports = (sequelize, Sequelize) => {
       type: 'DATETIMEOFFSET',
       allowNull: false,
       defaultValue: DataTypes.NOW,
+      field: 'sync_date',
       comment: 'Дата и время синхронизации с часовым поясом'
     },
     // Дата остатка (за какую дату этот остаток из API)
