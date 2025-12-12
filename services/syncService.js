@@ -295,16 +295,18 @@ class SyncService {
       // Подготовка данных для записи в БД
       const currentDate = new Date();
       
-      // Используем ту же дату что отправили в API
-      const stockDateObj = new Date(momentForApi.replace(' ', 'T')); // 2025-10-01T07:00:00
+      // Создаем Date объект с явным указанием времени 07:00:00
+      // Парсим дату по компонентам чтобы избежать проблем с часовыми поясами
+      const [year, month, day] = datePart.split('-').map(Number);
+      const stockDateObj = new Date(year, month - 1, day, 7, 0, 0, 0); // Локальное время 07:00:00
       
       // Проверка валидности даты
       if (isNaN(stockDateObj.getTime())) {
-        logger.error(`Неверный формат даты: ${momentForApi}`);
+        logger.error(`Неверный формат даты: ${datePart}`);
         return { success: false, recordCount: 0, error: 'Неверный формат даты' };
       }
       
-      logger.info(`Дата остатка для записи в БД: ${stockDateObj.toISOString()}`);
+      logger.info(`Дата остатка для записи в БД: ${stockDateObj.toLocaleString()} (${stockDateObj.toISOString()})`);
       
       const recordsToInsert = stockData
         .map(item => this.transformStockItem(item, warehouseId, currentDate, stockDateObj))
