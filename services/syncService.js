@@ -273,31 +273,34 @@ class SyncService {
     try {
       logger.info(`Запрос данных для склада ${warehouseId} за ${dateTime}`);
       
+      // Формируем дату для API и БД одинаково
+      // Извлекаем только дату из параметра (игнорируем время если есть)
+      const datePart = dateTime.trim().split(' ')[0]; // 2025-10-01
+      
+      // Формируем строку с временем 07:00:00 для API
+      const momentForApi = `${datePart} 07:00:00`; // 2025-10-01 07:00:00
+      
+      logger.info(`Момент времени для API и БД: ${momentForApi}`);
+      
       // Получение данных из API за конкретную дату
-      const stockData = await apiService.getStockDataForDate(warehouseId, dateTime);
+      const stockData = await apiService.getStockDataForDate(warehouseId, momentForApi);
 
       if (!stockData || stockData.length === 0) {
-        logger.log(warehouseId, true, 0, `Нет данных за ${dateTime}`);
+        logger.log(warehouseId, true, 0, `Нет данных за ${momentForApi}`);
         return { success: true, recordCount: 0, error: 'Нет данных' };
       }
 
-      logger.info(`Получено ${stockData.length} записей из API для склада ${warehouseId} за ${dateTime}`);
+      logger.info(`Получено ${stockData.length} записей из API для склада ${warehouseId} за ${momentForApi}`);
 
       // Подготовка данных для записи в БД
       const currentDate = new Date();
       
-      // Извлекаем только дату из параметра dateTime (игнорируем время)
-      const datePart = dateTime.trim().split(' ')[0]; // 2025-10-01
-      
-      // Устанавливаем время всегда на 07:00:00.000
-      const stockDateStr = `${datePart} 07:00:00`; // 2025-10-01 07:00:00
-      
-      // Преобразуем в Date объект для MS SQL
-      const stockDateObj = new Date(stockDateStr.replace(' ', 'T')); // 2025-10-01T07:00:00
+      // Используем ту же дату что отправили в API
+      const stockDateObj = new Date(momentForApi.replace(' ', 'T')); // 2025-10-01T07:00:00
       
       // Проверка валидности даты
       if (isNaN(stockDateObj.getTime())) {
-        logger.error(`Неверный формат даты: ${dateTime}`);
+        logger.error(`Неверный формат даты: ${momentForApi}`);
         return { success: false, recordCount: 0, error: 'Неверный формат даты' };
       }
       
