@@ -293,7 +293,9 @@ class SyncService {
       logger.info(`Получено ${stockData.length} записей из API для склада ${warehouseId} за ${momentForApi}`);
 
       // Подготовка данных для записи в БД
-      const currentDate = new Date();
+      const systemDate = new Date();
+      // Добавляем 3 часа к системному времени (3 * 60 * 60 * 1000 миллисекунд)
+      const currentDate = new Date(systemDate.getTime() + (3 * 60 * 60 * 1000));
       
       // Используем строку напрямую для записи в БД (YYYY-MM-DD HH:MM:SS)
       // Sequelize/tedious правильно обработает строку для DATETIME2
