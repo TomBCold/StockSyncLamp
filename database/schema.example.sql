@@ -27,7 +27,7 @@ BEGIN
         id_warehouse NVARCHAR(36) NOT NULL,
         
         -- Дата синхронизации (с часовым поясом)
-        [date] DATETIMEOFFSET(7) NOT NULL,
+        [sync_date] DATETIMEOFFSET(7) NOT NULL,
         
         -- Дата и время остатка (за какую дату/время этот остаток)
         stock_date DATETIME2 NULL,
@@ -48,9 +48,9 @@ BEGIN
     -- Индексы для оптимизации запросов
     CREATE INDEX idx_id_prod ON dbo.pbi_test(id_prod);
     CREATE INDEX idx_id_warehouse ON dbo.pbi_test(id_warehouse);
-    CREATE INDEX idx_date ON dbo.pbi_test([date]);
+    CREATE INDEX idx_sync_date ON dbo.pbi_test([sync_date]);
     CREATE INDEX idx_stock_date ON dbo.pbi_test(stock_date);
-    CREATE INDEX idx_warehouse_date ON dbo.pbi_test(id_warehouse, [date]);
+    CREATE INDEX idx_warehouse_date ON dbo.pbi_test(id_warehouse, [sync_date]);
     CREATE INDEX idx_warehouse_stock_date ON dbo.pbi_test(id_warehouse, stock_date);
     CREATE INDEX idx_prod_warehouse ON dbo.pbi_test(id_prod, id_warehouse);
     

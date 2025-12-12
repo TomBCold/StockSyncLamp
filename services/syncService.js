@@ -68,7 +68,7 @@ class SyncService {
     return {
       idProd: productId,
       idWarehouse: warehouseId,
-      date: syncDate,
+      syncDate: syncDate,
       stockDate: stockDate, // Дата остатка (для ретроспективы)
       // Остатки (приводим к целым числам)
       qtyStock: Math.floor(item.stock || 0),

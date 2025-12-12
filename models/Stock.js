@@ -22,7 +22,7 @@ module.exports = (sequelize, Sequelize) => {
       comment: 'ID склада из МойСклад (UUID)'
     },
     // Дата синхронизации (с часовым поясом)
-    date: {
+    syncDate: {
       type: 'DATETIMEOFFSET',
       allowNull: false,
       defaultValue: DataTypes.NOW,
