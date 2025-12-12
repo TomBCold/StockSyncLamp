@@ -295,21 +295,14 @@ class SyncService {
       // Подготовка данных для записи в БД
       const currentDate = new Date();
       
-      // Создаем Date объект с явным указанием времени 07:00:00
-      // Парсим дату по компонентам чтобы избежать проблем с часовыми поясами
-      const [year, month, day] = datePart.split('-').map(Number);
-      const stockDateObj = new Date(year, month - 1, day, 7, 0, 0, 0); // Локальное время 07:00:00
+      // Используем строку напрямую для записи в БД (YYYY-MM-DD HH:MM:SS)
+      // Sequelize/tedious правильно обработает строку для DATETIME2
+      const stockDateStr = `${datePart} 07:00:00`; // 2025-10-02 07:00:00
       
-      // Проверка валидности даты
-      if (isNaN(stockDateObj.getTime())) {
-        logger.error(`Неверный формат даты: ${datePart}`);
-        return { success: false, recordCount: 0, error: 'Неверный формат даты' };
-      }
-      
-      logger.info(`Дата остатка для записи в БД: ${stockDateObj.toLocaleString()} (${stockDateObj.toISOString()})`);
+      logger.info(`Дата остатка для записи в БД: ${stockDateStr}`);
       
       const recordsToInsert = stockData
-        .map(item => this.transformStockItem(item, warehouseId, currentDate, stockDateObj))
+        .map(item => this.transformStockItem(item, warehouseId, currentDate, stockDateStr))
         .filter(item => item !== null);
 
       if (recordsToInsert.length === 0) {
