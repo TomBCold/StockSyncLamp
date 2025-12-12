@@ -343,8 +343,14 @@ class SyncService {
    */
   generateDateRange(startDate, endDate) {
     const dates = [];
-    const start = new Date(startDate + 'T00:00:00'); // Правильный парсинг даты
-    const end = new Date(endDate + 'T00:00:00');
+    
+    // Парсим даты без создания Date объектов (избегаем проблем с часовыми поясами)
+    const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
+    const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
+    
+    // Создаем Date объекты в UTC чтобы избежать сдвига часовых поясов
+    const start = new Date(Date.UTC(startYear, startMonth - 1, startDay));
+    const end = new Date(Date.UTC(endYear, endMonth - 1, endDay));
 
     // Проверка корректности дат
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
@@ -358,9 +364,13 @@ class SyncService {
     // Генерируем массив дат с временем 07:00:00
     const current = new Date(start);
     while (current <= end) {
-      const dateStr = current.toISOString().split('T')[0] + ' 07:00:00'; // YYYY-MM-DD 07:00:00
+      // Извлекаем компоненты даты напрямую из UTC
+      const year = current.getUTCFullYear();
+      const month = String(current.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(current.getUTCDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day} 07:00:00`; // YYYY-MM-DD 07:00:00
       dates.push(dateStr);
-      current.setDate(current.getDate() + 1);
+      current.setUTCDate(current.getUTCDate() + 1);
     }
 
     return dates;
