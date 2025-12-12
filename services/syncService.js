@@ -286,16 +286,27 @@ class SyncService {
       // Подготовка данных для записи в БД
       const currentDate = new Date();
       
-      // Формируем строку даты в формате MS SQL DATETIME2: YYYY-MM-DD HH:MM:SS
-      const dateTimeWithSeconds = dateTime.includes(':') && dateTime.split(':').length === 2
-        ? `${dateTime}:00`  // 2025-10-01 07:00 -> 2025-10-01 07:00:00
-        : dateTime;
+      // Формируем дату остатка: добавляем секунды если их нет
+      let dateTimeWithSeconds = dateTime.trim();
+      const timeParts = dateTimeWithSeconds.split(' ')[1]?.split(':') || [];
+      if (timeParts.length === 2) {
+        dateTimeWithSeconds = `${dateTimeWithSeconds}:00`;  // 2025-10-01 07:00 -> 2025-10-01 07:00:00
+      }
       
-      // Передаем как строку для MS SQL DATETIME2
-      const stockDateStr = dateTimeWithSeconds; // Формат: YYYY-MM-DD HH:MM:SS
+      // Преобразуем в Date объект для MS SQL
+      // Формат: YYYY-MM-DD HH:MM:SS -> YYYY-MM-DDTHH:MM:SS
+      const stockDateObj = new Date(dateTimeWithSeconds.replace(' ', 'T'));
+      
+      // Проверка валидности даты
+      if (isNaN(stockDateObj.getTime())) {
+        logger.error(`Неверный формат даты: ${dateTime}`);
+        return { success: false, recordCount: 0, error: 'Неверный формат даты' };
+      }
+      
+      logger.info(`Дата остатка для запроса: ${stockDateObj.toISOString()}`);
       
       const recordsToInsert = stockData
-        .map(item => this.transformStockItem(item, warehouseId, currentDate, stockDateStr))
+        .map(item => this.transformStockItem(item, warehouseId, currentDate, stockDateObj))
         .filter(item => item !== null);
 
       if (recordsToInsert.length === 0) {

@@ -23,7 +23,7 @@ module.exports = (sequelize, Sequelize) => {
     },
     // Дата синхронизации (с часовым поясом)
     syncDate: {
-      type: 'DATETIMEOFFSET',
+      type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
       field: 'sync_date',
