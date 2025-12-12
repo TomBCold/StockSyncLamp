@@ -286,16 +286,16 @@ class SyncService {
       // Подготовка данных для записи в БД
       const currentDate = new Date();
       
-      // Правильно парсим дату: добавляем секунды если их нет
+      // Формируем строку даты в формате MS SQL DATETIME2: YYYY-MM-DD HH:MM:SS
       const dateTimeWithSeconds = dateTime.includes(':') && dateTime.split(':').length === 2
         ? `${dateTime}:00`  // 2025-10-01 07:00 -> 2025-10-01 07:00:00
         : dateTime;
       
-      // Преобразуем в ISO формат для корректной работы с MS SQL
-      const stockDateObj = new Date(dateTimeWithSeconds.replace(' ', 'T')); // 2025-10-01T07:00:00
+      // Передаем как строку для MS SQL DATETIME2
+      const stockDateStr = dateTimeWithSeconds; // Формат: YYYY-MM-DD HH:MM:SS
       
       const recordsToInsert = stockData
-        .map(item => this.transformStockItem(item, warehouseId, currentDate, stockDateObj))
+        .map(item => this.transformStockItem(item, warehouseId, currentDate, stockDateStr))
         .filter(item => item !== null);
 
       if (recordsToInsert.length === 0) {
