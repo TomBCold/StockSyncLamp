@@ -88,8 +88,10 @@ module.exports = (sequelize, Sequelize) => {
     indexes: [
       { fields: ['id_prod'] },
       { fields: ['id_warehouse'] },
-      { fields: ['date'] },
-      { fields: ['id_warehouse', 'date'] },
+      { fields: ['sync_date'] },
+      { fields: ['stock_date'] },
+      { fields: ['id_warehouse', 'sync_date'] },
+      { fields: ['id_warehouse', 'stock_date'] },
       { fields: ['id_prod', 'id_warehouse'] }
     ]
   });

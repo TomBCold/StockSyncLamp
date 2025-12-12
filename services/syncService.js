@@ -134,7 +134,7 @@ class SyncService {
       const count = await db.Stock.count({
         where: {
           idWarehouse: warehouseId,
-          date: currentDate
+          syncDate: currentDate
         }
       });
 

@@ -237,12 +237,12 @@ ORDER BY id;
 
 ```sql
 SELECT 
-    CAST([date] AS DATE) as sync_date,
+    CAST(sync_date AS DATE) as sync_date,
     stock_date,
     COUNT(*) as records
 FROM dbo.pbi_test
 WHERE stock_date IS NOT NULL
-GROUP BY CAST([date] AS DATE), stock_date
+GROUP BY CAST(sync_date AS DATE), stock_date
 ORDER BY sync_date DESC, stock_date DESC;
 ```
 

@@ -71,10 +71,11 @@ WHERE name = 'pbi_test';
 GO
 
 -- Примечания:
--- 1. id_prod извлекается из meta.href после /entity/product/ и до ?
+-- 1. id_prod извлекается из meta.href после /entity/product/ или /entity/variant/ и до ?
 -- 2. id_warehouse - это ID склада, по которому запрашивалась информация
--- 3. date - текущая дата/время синхронизации
--- 4. Все количественные поля (qty_*) приводятся к INT
--- 5. avg_cost = price / 100 (приводится к INT)
--- 6. days_on_stock = stockDays (приводится к INT)
+-- 3. sync_date - дата/время синхронизации (когда данные были загружены)
+-- 4. stock_date - дата/время остатка (за какую дату данные из API)
+-- 5. Все количественные поля (qty_*) приводятся к INT
+-- 6. avg_cost = price / 100 (с копейками, DECIMAL(9,2))
+-- 7. days_on_stock = stockDays (приводится к INT)
 

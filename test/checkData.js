@@ -40,8 +40,8 @@ async function checkData() {
       SELECT 
         id_warehouse,
         COUNT(*) as record_count,
-        MIN([date]) as first_sync,
-        MAX([date]) as last_sync
+        MIN(sync_date) as first_sync,
+        MAX(sync_date) as last_sync
       FROM dbo.pbi_test
       GROUP BY id_warehouse
       ORDER BY record_count DESC
@@ -57,12 +57,12 @@ async function checkData() {
     // Последние 10 записей
     console.log('\nПоследние 10 записей:');
     const latestRecords = await db.Stock.findAll({
-      order: [['date', 'DESC']],
+      order: [['syncDate', 'DESC']],
       limit: 10
     });
 
     latestRecords.forEach((record, index) => {
-      console.log(`  ${index + 1}. ID: ${record.id}, Товар: ${record.idProd.substring(0, 8)}..., Склад: ${record.idWarehouse.substring(0, 8)}..., Остаток: ${record.qtyStock}, Дата: ${new Date(record.date).toLocaleString()}`);
+      console.log(`  ${index + 1}. ID: ${record.id}, Товар: ${record.idProd.substring(0, 8)}..., Склад: ${record.idWarehouse.substring(0, 8)}..., Остаток: ${record.qtyStock}, Дата синхр: ${new Date(record.syncDate).toLocaleString()}, Дата остатка: ${record.stockDate ? new Date(record.stockDate).toLocaleString() : 'N/A'}`);
     });
 
     // Статистика за сегодня
@@ -75,7 +75,7 @@ async function checkData() {
         SUM(qty_stock) as total_stock,
         SUM(qty_available) as total_available
       FROM dbo.pbi_test
-      WHERE CAST([date] AS DATE) = CAST(GETDATE() AS DATE)
+      WHERE CAST(sync_date AS DATE) = CAST(GETDATE() AS DATE)
     `);
 
     if (todayStats[0].today_count > 0) {

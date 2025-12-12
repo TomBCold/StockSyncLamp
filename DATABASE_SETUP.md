@@ -127,14 +127,14 @@ ORDER BY [date] DESC;
 ### Статистика по складу за дату
 ```sql
 SELECT 
-  CAST([date] AS DATE) as sync_date,
+  CAST(sync_date AS DATE) as sync_date,
   COUNT(*) as total_products,
   SUM(qty_stock) as total_stock,
   SUM(qty_available) as total_available
 FROM dbo.pbi_test 
 WHERE id_warehouse = '6599a08d-9475-4601-8518-d6175cf12aeb'
-  AND CAST([date] AS DATE) = '2025-12-02'
-GROUP BY CAST([date] AS DATE);
+  AND CAST(sync_date AS DATE) = '2025-12-02'
+GROUP BY CAST(sync_date AS DATE);
 ```
 
 ### Товары с нулевыми остатками
