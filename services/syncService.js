@@ -88,6 +88,13 @@ class SyncService {
    * @returns {Promise<{success: boolean, recordCount: number, error: string}>}
    */
   async syncWarehouse(warehouseId) {
+    // Формируем дату для логов (текущая дата + 07:00:00)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const syncDateForLog = `${year}-${month}-${day} 07:00:00`;
+    
     try {
       logger.info(`Начало синхронизации для склада ${warehouseId}`);
       
@@ -95,7 +102,7 @@ class SyncService {
       const stockData = await apiService.getStockData(warehouseId);
 
       if (!stockData || stockData.length === 0) {
-        logger.log(warehouseId, true, 0, 'Нет данных');
+        logger.log(warehouseId, true, 0, `Нет данных за ${syncDateForLog}`);
         return { success: true, recordCount: 0, error: 'Нет данных' };
       }
 
@@ -105,12 +112,13 @@ class SyncService {
       const systemDate = new Date();
       // Добавляем 3 часа к системному времени (3 * 60 * 60 * 1000 миллисекунд)
       const currentDate = new Date(systemDate.getTime() + (3 * 60 * 60 * 1000));
+      
       const recordsToInsert = stockData
         .map(item => this.transformStockItem(item, warehouseId, currentDate))
         .filter(item => item !== null); // Убираем записи без ID товара
 
       if (recordsToInsert.length === 0) {
-        logger.log(warehouseId, false, 0, 'Не удалось обработать ни одной записи');
+        logger.log(warehouseId, false, 0, `Не удалось обработать ни одной записи за ${syncDateForLog}`);
         return { success: false, recordCount: 0, error: 'Не удалось обработать данные' };
       }
 
@@ -141,16 +149,16 @@ class SyncService {
       logger.info(`Проверка: найдено ${count} записей в БД для склада ${warehouseId} с датой ${currentDate.toISOString()}`);
 
       if (count === 0) {
-        logger.log(warehouseId, false, 0, 'Записи не найдены в БД после вставки!');
+        logger.log(warehouseId, false, 0, `Записи не найдены в БД после вставки за ${syncDateForLog}`);
         return { success: false, recordCount: 0, error: 'Данные не сохранились в БД' };
       }
 
-      logger.log(warehouseId, true, count);
+      logger.log(warehouseId, true, count, `За дату ${syncDateForLog}`);
       logger.info(`Успешно записано ${count} записей для склада ${warehouseId}`);
       
       return { success: true, recordCount: count, error: '' };
     } catch (error) {
-      logger.log(warehouseId, false, 0, error.message);
+      logger.log(warehouseId, false, 0, `${syncDateForLog}: ${error.message}`);
       console.error(`Ошибка синхронизации склада ${warehouseId}:`, error);
       return { success: false, recordCount: 0, error: error.message };
     }
@@ -270,16 +278,15 @@ class SyncService {
    * @returns {Promise<{success: boolean, recordCount: number, error: string}>}
    */
   async syncWarehouseForDate(warehouseId, dateTime) {
+    // Формируем дату для API и БД одинаково
+    // Извлекаем только дату из параметра (игнорируем время если есть)
+    const datePart = dateTime.trim().split(' ')[0]; // 2025-10-01
+    
+    // Формируем строку с временем 07:00:00 для API
+    const momentForApi = `${datePart} 07:00:00`; // 2025-10-01 07:00:00
+    
     try {
       logger.info(`Запрос данных для склада ${warehouseId} за ${dateTime}`);
-      
-      // Формируем дату для API и БД одинаково
-      // Извлекаем только дату из параметра (игнорируем время если есть)
-      const datePart = dateTime.trim().split(' ')[0]; // 2025-10-01
-      
-      // Формируем строку с временем 07:00:00 для API
-      const momentForApi = `${datePart} 07:00:00`; // 2025-10-01 07:00:00
-      
       logger.info(`Момент времени для API и БД: ${momentForApi}`);
       
       // Получение данных из API за конкретную дату
@@ -308,7 +315,7 @@ class SyncService {
         .filter(item => item !== null);
 
       if (recordsToInsert.length === 0) {
-        logger.log(warehouseId, false, 0, `Не удалось обработать данные за ${dateTime}`);
+        logger.log(warehouseId, false, 0, `Не удалось обработать данные за ${momentForApi}`);
         return { success: false, recordCount: 0, error: 'Не удалось обработать данные' };
       }
 
@@ -322,12 +329,12 @@ class SyncService {
       });
 
       logger.info(`Записано ${recordsToInsert.length} записей для склада ${warehouseId} за ${dateTime}`);
-      logger.log(warehouseId, true, recordsToInsert.length, `За дату ${dateTime}`);
+      logger.log(warehouseId, true, recordsToInsert.length, `За дату ${momentForApi}`);
       
       return { success: true, recordCount: recordsToInsert.length, error: '' };
     } catch (error) {
-      logger.log(warehouseId, false, 0, `${dateTime}: ${error.message}`);
-      console.error(`Ошибка синхронизации склада ${warehouseId} за ${dateTime}:`, error);
+      logger.log(warehouseId, false, 0, `${momentForApi}: ${error.message}`);
+      console.error(`Ошибка синхронизации склада ${warehouseId} за ${momentForApi}:`, error);
       return { success: false, recordCount: 0, error: error.message };
     }
   }
