@@ -127,16 +127,51 @@ class SyncService {
       // Логируем пример первой записи для отладки
       console.log('Пример данных для вставки:', JSON.stringify(recordsToInsert[0], null, 2));
 
-      // Запись в БД (пакетная вставка)
-      logger.info('Начало вставки в БД...');
-      const insertedRecords = await db.Stock.bulkCreate(recordsToInsert, {
-        validate: true,
-        ignoreDuplicates: false,
-        returning: true, // Вернуть вставленные записи
-        logging: console.log // Логировать SQL запросы
-      });
+      // Собираем список уникальных ID товаров для удаления дубликатов
+      const productIds = [...new Set(recordsToInsert.map(item => item.idProd))];
+      logger.info(`Уникальных товаров для обработки: ${productIds.length}`);
 
-      logger.info(`bulkCreate завершен. Вставлено записей: ${insertedRecords.length}`);
+      // Используем транзакцию для атомарности операции (удаление + вставка)
+      const transaction = await db.sequelize.transaction();
+      
+      try {
+        // Удаляем существующие записи с такой же комбинацией:
+        // id_warehouse + stock_date (NULL для обычной синхронизации) + id_prod
+        const deleteCondition = {
+          idWarehouse: warehouseId,
+          stockDate: null, // Обычная синхронизация - stock_date = NULL
+          idProd: productIds
+        };
+
+        logger.info('Удаление существующих записей...');
+        const deletedCount = await db.Stock.destroy({
+          where: deleteCondition,
+          transaction
+        });
+
+        logger.info(`Удалено существующих записей: ${deletedCount}`);
+
+        // Запись в БД (пакетная вставка)
+        logger.info('Начало вставки в БД...');
+        const insertedRecords = await db.Stock.bulkCreate(recordsToInsert, {
+          validate: true,
+          ignoreDuplicates: false,
+          returning: true,
+          logging: console.log,
+          transaction
+        });
+
+        logger.info(`bulkCreate завершен. Вставлено записей: ${insertedRecords.length}`);
+
+        // Подтверждаем транзакцию
+        await transaction.commit();
+        logger.info('Транзакция успешно завершена');
+      } catch (error) {
+        // Откатываем транзакцию в случае ошибки
+        await transaction.rollback();
+        logger.info('Транзакция отменена из-за ошибки');
+        throw error;
+      }
 
       // Проверка: запрашиваем количество записей в БД для этого склада
       const count = await db.Stock.count({
@@ -321,12 +356,50 @@ class SyncService {
 
       logger.info(`Подготовлено ${recordsToInsert.length} записей для вставки за ${dateTime}`);
 
-      // Запись в БД
-      const insertedRecords = await db.Stock.bulkCreate(recordsToInsert, {
-        validate: true,
-        ignoreDuplicates: false,
-        returning: false
-      });
+      // Собираем список уникальных ID товаров для удаления дубликатов
+      const productIds = [...new Set(recordsToInsert.map(item => item.idProd))];
+      logger.info(`Уникальных товаров для обработки: ${productIds.length}`);
+
+      // Используем транзакцию для атомарности операции (удаление + вставка)
+      const transaction = await db.sequelize.transaction();
+      
+      try {
+        // Удаляем существующие записи с такой же комбинацией:
+        // id_warehouse + stock_date + id_prod
+        const deleteCondition = {
+          idWarehouse: warehouseId,
+          stockDate: stockDateStr, // Конкретная дата для ретроспективной синхронизации
+          idProd: productIds
+        };
+
+        logger.info(`Удаление существующих записей для ${momentForApi}...`);
+        const deletedCount = await db.Stock.destroy({
+          where: deleteCondition,
+          transaction
+        });
+
+        logger.info(`Удалено существующих записей: ${deletedCount}`);
+
+        // Запись в БД (пакетная вставка)
+        logger.info('Начало вставки в БД...');
+        const insertedRecords = await db.Stock.bulkCreate(recordsToInsert, {
+          validate: true,
+          ignoreDuplicates: false,
+          returning: false,
+          transaction
+        });
+
+        logger.info(`bulkCreate завершен. Вставлено записей: ${insertedRecords.length}`);
+
+        // Подтверждаем транзакцию
+        await transaction.commit();
+        logger.info('Транзакция успешно завершена');
+      } catch (error) {
+        // Откатываем транзакцию в случае ошибки
+        await transaction.rollback();
+        logger.info('Транзакция отменена из-за ошибки');
+        throw error;
+      }
 
       logger.info(`Записано ${recordsToInsert.length} записей для склада ${warehouseId} за ${dateTime}`);
       logger.log(warehouseId, true, recordsToInsert.length, `За дату ${momentForApi}`);
