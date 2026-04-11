@@ -40,7 +40,9 @@ app.get('/', (req, res) => {
     status: 'running',
     endpoints: {
       health: '/health',
-      syncManual: '/sync/manual',
+      syncManual: '/sync/manual (остатки + товары)',
+      syncStock: '/sync/stock (только остатки)',
+      syncProducts: '/sync/products (только товары)',
       syncRetrospective: '/sync/retrospective',
       syncStatus: '/sync/status'
     }
@@ -127,6 +129,32 @@ app.post('/sync/manual', async (req, res) => {
   }
 });
 
+// Ручной запуск синхронизации только остатков
+app.post('/sync/stock', async (req, res) => {
+  try {
+    logger.info('Запущена ручная синхронизация остатков');
+
+    syncService.syncStock()
+      .then(result => {
+        logger.info(`Синхронизация остатков завершена: ${JSON.stringify(result)}`);
+      })
+      .catch(error => {
+        logger.info(`Ошибка при синхронизации остатков: ${error.message}`);
+      });
+
+    res.json({
+      message: 'Синхронизация остатков запущена',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.info(`Ошибка запуска синхронизации остатков: ${error.message}`);
+    res.status(500).json({
+      error: 'Ошибка запуска синхронизации остатков',
+      message: error.message
+    });
+  }
+});
+
 // Ретроспективная синхронизация за период
 app.post('/sync/retrospective', async (req, res) => {
   try {
@@ -168,6 +196,32 @@ app.post('/sync/retrospective', async (req, res) => {
     logger.info(`Ошибка запуска ретроспективной синхронизации: ${error.message}`);
     res.status(500).json({
       error: 'Ошибка запуска ретроспективной синхронизации',
+      message: error.message
+    });
+  }
+});
+
+// Ручной запуск синхронизации товаров
+app.post('/sync/products', async (req, res) => {
+  try {
+    logger.info('Запущена ручная синхронизация товаров');
+
+    syncService.syncProducts()
+      .then(result => {
+        logger.info(`Синхронизация товаров завершена: ${JSON.stringify(result)}`);
+      })
+      .catch(error => {
+        logger.info(`Ошибка при синхронизации товаров: ${error.message}`);
+      });
+
+    res.json({
+      message: 'Синхронизация товаров запущена',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.info(`Ошибка запуска синхронизации товаров: ${error.message}`);
+    res.status(500).json({
+      error: 'Ошибка запуска синхронизации товаров',
       message: error.message
     });
   }

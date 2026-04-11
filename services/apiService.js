@@ -193,6 +193,65 @@ class ApiService {
   }
 
   /**
+   * Получение списка товаров (ассортимент)
+   * @returns {Promise<Array>} - Массив товаров
+   */
+  async getProductsData() {
+    try {
+      const productsUrl = process.env.PRODUCTS_API_URL
+        || 'https://api.moysklad.ru/api/remap/1.2/entity/product';
+
+      let allData = [];
+      let offset = 0;
+      const limit = 100;
+      let hasMoreData = true;
+
+      console.log(`Запрос товаров из ${productsUrl}`);
+
+      while (hasMoreData) {
+        const response = await axios.get(productsUrl, {
+          headers: {
+            'Authorization': this.getAuthHeader(),
+            'Content-Type': 'application/json',
+            'Accept-Encoding': 'gzip'
+          },
+          params: {
+            offset: offset,
+            limit: limit
+          }
+        });
+
+        if (response.data && response.data.rows && Array.isArray(response.data.rows)) {
+          allData = allData.concat(response.data.rows);
+          hasMoreData = response.data.rows.length >= limit;
+          offset += limit;
+        } else if (response.data && Array.isArray(response.data)) {
+          allData = allData.concat(response.data);
+          hasMoreData = response.data.length >= limit;
+          offset += limit;
+        } else {
+          hasMoreData = false;
+        }
+
+        if (offset > 100000) {
+          console.warn('Достигнут лимит записей (100000) для товаров');
+          break;
+        }
+      }
+
+      console.log(`Получено ${allData.length} товаров`);
+      return allData;
+    } catch (error) {
+      console.error('Ошибка получения списка товаров:', error.message);
+      if (error.response) {
+        console.error(`Статус ответа: ${error.response.status}`);
+        console.error('Данные ответа:', error.response.data);
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Проверка доступности API
    * @returns {Promise<boolean>}
    */

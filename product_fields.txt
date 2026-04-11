@@ -1,0 +1,92 @@
+# Маппинг полей товаров: МойСклад API → БД (таблица pbi_products)
+# Формат: поле_api | поле_бд | тип_данных [ | трансформация ]
+#
+# Трансформации (необязательный 4-й столбец):
+#   /N   — разделить значение на N (например /100 для цен в копейках)
+#   *N   — умножить значение на N
+#
+# Типы данных:
+#   STRING(N)      — строка длиной N символов
+#   TEXT           — длинный текст (NVARCHAR(MAX))
+#   INTEGER        — целое число
+#   BIGINT         — большое целое число
+#   DECIMAL(P,S)   — число с фиксированной точкой
+#   FLOAT          — число с плавающей точкой
+#   BOOLEAN        — логическое (BIT)
+#   DATE           — дата и время
+#   JSON           — объект/массив сериализуется в JSON-строку
+#
+# Способы указания поля API:
+#   name                    — простое поле
+#   meta.href               — вложенное поле через точку
+#   attribute(UUID)         — значение доп. поля по ID атрибута из attributes[]
+#   attribute(UUID).name    — имя доп. поля (вместо value)
+#   mappedAttributes        — все доп. поля по скриншоту в один JSON (см. utils/mappedAttributesRules.js)
+#
+# Для meta.href и *.meta.href автоматически извлекается UUID из URL
+#
+# packs.N.* — поле N-й упаковки (с нуля), например packs.0.id — первая упаковка
+#
+# salePrice("имя типа цены") — value из элемента salePrices[], где priceType.name совпадает с именем;
+#   ненужные типы цен просто не указываются в маппинге. Значение в копейках — используйте | /100
+#
+accountId                                 | account_id              | INTEGER
+archived                                  | archived                | BOOLEAN
+article                                   | article                 | STRING(255)
+barcodes                                  | barcodes                | JSON
+buyPrice.value                            | buy_price               | DECIMAL(15,2)             | /100
+buyPrice.currency.meta.href               | buy_price_currency      | STRING(255)
+code                                      | code                    | STRING(255)
+country.meta.href                         | country_href            | STRING(255)
+description                               | description             | STRING(4096)
+discountProhibited                        | discount_prohibited     | BOOLEAN
+effectiveVat                              | effective_vat           | INTEGER
+effectiveVatEnabled                       | effective_vat_enabled   | BOOLEAN
+externalCode                              | external_code           | STRING(255)
+group.meta.href                           | group_href              | STRING(255)
+id                                        | uuid                    | INTEGER
+isSerialTrackable                         | is_serial_trackable     | BOOLEAN
+meta.href                                 | id_href                 | STRING(255)
+minPrice.value                            | min_price               | DECIMAL(15,2)             | /100
+minPrice.currency.meta.href               | min_price_currency      | STRING(255)
+minimumBalance                            | minimum_balance         | FLOAT
+name                                      | name                    | STRING(255)
+owner.meta.href                           | owner_href              | STRING(255)
+packs.0.id                                | pack_id                 | STRING(36)
+packs.0.uom.meta.href                     | pack_uom                | STRING(255)
+packs.0.barcodes                          | pack_barcode            | JSON
+packs.0.quantity                          | pack_quantity           | FLOAT
+partialDisposal                           | partial_disposal        | BOOLEAN
+pathName                                  | path_name               | STRING(255)
+paymentItemType                           | payment_item_type       | ENUM
+ppeType                                   | ppe_type                | ENUM
+productFolder.meta.href                   | product_folder_href     | STRING(255)
+salePrice("Цена продажи")                 | price_sale              | DECIMAL(15,2)             | /100
+salePrice("Цена на выставке")             | price_exhibition        | DECIMAL(15,2)             | /100
+salePrice("Цена Опт")                     | price_opt               | DECIMAL(15,2)             | /100
+salePrice("Цена Яндекс FBS")              | price_yandex_fbs        | DECIMAL(15,2)             | /100
+salePrice("Цена Яндекс Go Мск")           | price_yandex_go_msk     | DECIMAL(15,2)             | /100
+salePrice("Цена Яндекс Go СПб")           | price_yandex_go_spb     | DECIMAL(15,2)             | /100
+salePrice("Цена Яндекс FBY / FBY+")       | price_yandex_fby        | DECIMAL(15,2)             | /100
+salePrice("Цена Купер")                   | price_kuper             | DECIMAL(15,2)             | /100
+salePrice("Цена продажи офлайн")          | price_offline_sale      | DECIMAL(15,2)             | /100
+salePrice("Базовая цена / РРЦ")           | price_base_rrc          | DECIMAL(15,2)             | /100
+salePrice("Цена Мегамаркет")              | price_megamarket        | DECIMAL(15,2)             | /100
+salePrice("Цена бонусной программы СТОМ") | price_stom_bonus        | DECIMAL(15,2)             | /100
+shared                                    | shared                  | BOOLEAN
+supplier.meta.href                        | supplier_href           | STRING(255)
+taxSystem                                 | tax_system              | ENUM
+things                                    | things                  | JSON
+tnved                                     | tnved                   | STRING(255)
+trackingType                              | tracking_type           | ENUM
+uom.meta.href                             | uom_href                | STRING(255)
+updated                                   | updated                 | DATE
+useParentVat                              | use_parent_vat          | BOOLEAN
+variantsCount                             | variants_count          | INTEGER
+vat                                       | vat                     | INTEGER
+vatEnabled                                | vat_enabled             | BOOLEAN
+volume                                    | volume                  | FLOAT
+weight                                    | weight                  | FLOAT
+mappedAttributes                          | attributes              | JSON
+#
+# Примеры: attribute(uuid) | поле | тип

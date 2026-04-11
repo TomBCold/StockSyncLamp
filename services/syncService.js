@@ -3,6 +3,7 @@ const path = require('path');
 const apiService = require('./apiService');
 const logger = require('../utils/logger');
 const db = require('../models');
+const { readFieldMapping, transformItem } = require('../utils/fieldMapping');
 
 class SyncService {
   constructor() {
@@ -200,16 +201,16 @@ class SyncService {
   }
 
   /**
-   * Синхронизация данных для всех складов
-   * @returns {Promise<Object>} - Результаты синхронизации
+   * Синхронизация остатков для всех складов (без товаров)
+   * @returns {Promise<Object>} - Результаты синхронизации остатков
    */
-  async syncAll() {
-    logger.info('=== Начало синхронизации ===');
+  async syncStock() {
+    logger.info('=== Начало синхронизации остатков ===');
 
     const warehouses = this.readWarehouses();
 
     if (warehouses.length === 0) {
-      logger.info('Список складов пуст. Синхронизация не выполнена.');
+      logger.info('Список складов пуст. Синхронизация остатков не выполнена.');
       return { total: 0, success: 0, failed: 0, results: [] };
     }
 
@@ -235,7 +236,27 @@ class SyncService {
       results: results
     };
 
-    logger.info(`=== Синхронизация завершена. Всего: ${summary.total}, Успешно: ${summary.success}, Ошибок: ${summary.failed} ===`);
+    logger.info(`=== Синхронизация остатков завершена. Всего: ${summary.total}, Успешно: ${summary.success}, Ошибок: ${summary.failed} ===`);
+
+    return summary;
+  }
+
+  /**
+   * Синхронизация всего: остатки + товары
+   * @returns {Promise<Object>} - Результаты синхронизации
+   */
+  async syncAll() {
+    logger.info('=== Начало полной синхронизации ===');
+
+    const stockResult = await this.syncStock();
+    const productsResult = await this.syncProducts();
+
+    const summary = {
+      stock: stockResult,
+      products: productsResult
+    };
+
+    logger.info(`=== Полная синхронизация завершена. Остатки: ${stockResult.success}/${stockResult.total}. Товары: ${productsResult.recordCount} ===`);
 
     return summary;
   }
@@ -408,6 +429,93 @@ class SyncService {
     } catch (error) {
       logger.log(warehouseId, false, 0, `${momentForApi}: ${error.message}`);
       console.error(`Ошибка синхронизации склада ${warehouseId} за ${momentForApi}:`, error);
+      return { success: false, recordCount: 0, error: error.message };
+    }
+  }
+
+  /**
+   * Синхронизация справочника товаров в таблицу pbi_products
+   * @returns {Promise<{success: boolean, recordCount: number, error: string}>}
+   */
+  async syncProducts() {
+    try {
+      logger.info('=== Начало синхронизации товаров ===');
+
+      // Читаем маппинг полей
+      const mapping = readFieldMapping();
+      logger.info(`Загружен маппинг: ${mapping.length} полей`);
+
+      // Получаем данные из API
+      const productsData = await apiService.getProductsData();
+
+      if (!productsData || productsData.length === 0) {
+        logger.info('Нет данных о товарах из API');
+        return { success: true, recordCount: 0, error: 'Нет данных' };
+      }
+
+      logger.info(`Получено ${productsData.length} товаров из API`);
+
+      // Трансформируем данные согласно маппингу
+      const systemDate = new Date();
+      const currentDate = new Date(systemDate.getTime() + (3 * 60 * 60 * 1000));
+
+      const recordsToInsert = productsData
+        .map(item => {
+          const record = transformItem(item, mapping);
+          if (!record) return null;
+          record.syncDate = currentDate;
+          return record;
+        })
+        .filter(item => item !== null);
+
+      if (recordsToInsert.length === 0) {
+        logger.info('Не удалось обработать ни одного товара');
+        return { success: false, recordCount: 0, error: 'Не удалось обработать данные' };
+      }
+
+      logger.info(`Подготовлено ${recordsToInsert.length} записей товаров для вставки`);
+      console.log(recordsToInsert);
+
+      // Используем транзакцию: очищаем таблицу и вставляем заново
+      const transaction = await db.sequelize.transaction();
+
+      try {
+        // Удаляем все существующие записи
+        const deletedCount = await db.Product.destroy({
+          where: {},
+          truncate: true,
+          transaction
+        });
+
+        logger.info(`Удалено существующих записей товаров: ${deletedCount}`);
+
+        // Вставляем пакетами по 500 записей
+        const batchSize = 500;
+        let insertedTotal = 0;
+
+        for (let i = 0; i < recordsToInsert.length; i += batchSize) {
+          const batch = recordsToInsert.slice(i, i + batchSize);
+          await db.Product.bulkCreate(batch, {
+            validate: true,
+            transaction
+          });
+          insertedTotal += batch.length;
+          logger.info(`Вставлено ${insertedTotal}/${recordsToInsert.length} товаров`);
+        }
+
+        await transaction.commit();
+        logger.info('Транзакция товаров успешно завершена');
+      } catch (error) {
+        await transaction.rollback();
+        logger.info('Транзакция товаров отменена из-за ошибки');
+        throw error;
+      }
+
+      logger.info(`=== Синхронизация товаров завершена: ${recordsToInsert.length} записей ===`);
+      return { success: true, recordCount: recordsToInsert.length, error: '' };
+    } catch (error) {
+      logger.info(`Ошибка синхронизации товаров: ${error.message}`);
+      console.error('Ошибка синхронизации товаров:', error);
       return { success: false, recordCount: 0, error: error.message };
     }
   }
