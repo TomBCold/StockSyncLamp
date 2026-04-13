@@ -30,7 +30,7 @@
 # salePrice("имя типа цены") — value из элемента salePrices[], где priceType.name совпадает с именем;
 #   ненужные типы цен просто не указываются в маппинге. Значение в копейках — используйте | /100
 #
-accountId                                 | account_id              | INTEGER
+accountId                                 | account_id              | STRING(255)
 archived                                  | archived                | BOOLEAN
 article                                   | article                 | STRING(255)
 barcodes                                  | barcodes                | JSON
@@ -44,7 +44,7 @@ effectiveVat                              | effective_vat           | INTEGER
 effectiveVatEnabled                       | effective_vat_enabled   | BOOLEAN
 externalCode                              | external_code           | STRING(255)
 group.meta.href                           | group_href              | STRING(255)
-id                                        | uuid                    | INTEGER
+id                                        | uuid                    | STRING(255)
 isSerialTrackable                         | is_serial_trackable     | BOOLEAN
 meta.href                                 | id_href                 | STRING(255)
 minPrice.value                            | min_price               | DECIMAL(15,2)             | /100
