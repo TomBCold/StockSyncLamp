@@ -11,6 +11,27 @@ class SyncService {
   }
 
   /**
+   * Безопасный откат транзакции без маскировки исходной ошибки
+   * @param {Object} transaction - Sequelize transaction
+   * @param {string} scope - Контекст для логов
+   */
+  async safeRollback(transaction, scope) {
+    if (!transaction) return;
+
+    if (transaction.finished) {
+      logger.info(`Транзакция ${scope} уже завершена (${transaction.finished}), rollback пропущен`);
+      return;
+    }
+
+    try {
+      await transaction.rollback();
+      logger.info(`Транзакция ${scope} отменена из-за ошибки`);
+    } catch (rollbackError) {
+      logger.info(`Rollback для ${scope} пропущен: ${rollbackError.message}`);
+    }
+  }
+
+  /**
    * Чтение списка складов из файла
    * @returns {Array<string>} - Массив кодов/названий складов
    */
@@ -169,8 +190,7 @@ class SyncService {
         logger.info('Транзакция успешно завершена');
       } catch (error) {
         // Откатываем транзакцию в случае ошибки
-        await transaction.rollback();
-        logger.info('Транзакция отменена из-за ошибки');
+        await this.safeRollback(transaction, 'остатков');
         throw error;
       }
 
@@ -417,8 +437,7 @@ class SyncService {
         logger.info('Транзакция успешно завершена');
       } catch (error) {
         // Откатываем транзакцию в случае ошибки
-        await transaction.rollback();
-        logger.info('Транзакция отменена из-за ошибки');
+        await this.safeRollback(transaction, 'остатков (ретроспектива)');
         throw error;
       }
 
@@ -483,7 +502,6 @@ class SyncService {
         // Удаляем все существующие записи
         const deletedCount = await db.Product.destroy({
           where: {},
-          truncate: true,
           transaction
         });
 
@@ -506,8 +524,7 @@ class SyncService {
         await transaction.commit();
         logger.info('Транзакция товаров успешно завершена');
       } catch (error) {
-        await transaction.rollback();
-        logger.info('Транзакция товаров отменена из-за ошибки');
+        await this.safeRollback(transaction, 'товаров');
         throw error;
       }
 
