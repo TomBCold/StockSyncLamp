@@ -12,7 +12,8 @@ const svc = new Service({
   script: path.join(__dirname, 'server.js'),
   nodeOptions: [
     '--harmony',
-    '--max_old_space_size=4096'
+    // 4096 может конфликтовать с ограничениями параметров Windows Service.
+    '--max_old_space_size=2048'
   ],
   env: [
     {

@@ -38,7 +38,7 @@ buyPrice.value                            | buy_price               | DECIMAL(15
 buyPrice.currency.meta.href               | buy_price_currency      | STRING(255)
 code                                      | code                    | STRING(255)
 country.meta.href                         | country_href            | STRING(255)
-description                               | description             | STRING(4096)
+description                               | description             | TEXT
 discountProhibited                        | discount_prohibited     | BOOLEAN
 effectiveVat                              | effective_vat           | INTEGER
 effectiveVatEnabled                       | effective_vat_enabled   | BOOLEAN
