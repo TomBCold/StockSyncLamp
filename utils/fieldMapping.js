@@ -136,7 +136,7 @@ const CATEGORY_OZ_SPLIT_SEP = ' // ';
 
 /**
  * Значение доп. поля по имени атрибута (как в МойСклад: name в metadata).
- * long/time/boolean/string/double — value; customentity — value.name
+ * long/time/boolean/string/double — value; customentity — полный value (объект)
  * @param {Array} attributes
  * @param {string} attrName
  * @returns {*}
@@ -148,11 +148,8 @@ function getAttributeValueByName(attributes, attrName) {
 
   const t = String(attr.type || '').toLowerCase();
   if (t === 'customentity') {
-    if (attr.value == null) return null;
-    if (typeof attr.value === 'object' && attr.value.name !== undefined) {
-      return attr.value.name;
-    }
-    return typeof attr.value === 'string' ? attr.value : null;
+    // Для всех customentity сохраняем полное значение value как JSON-объект.
+    return attr.value !== undefined ? attr.value : null;
   }
 
   return attr.value !== undefined ? attr.value : null;
@@ -242,6 +239,20 @@ function parseApiField(apiField) {
   if (salePriceMatch) {
     return { type: 'salePrice', priceTypeName: salePriceMatch[1] };
   }
+  // attributeSplitPart("Категория ОЗ",0) — части customentity.name по разделителю
+  const splitPartMatch = apiField.match(/^attributeSplitPart\("([^"]*)",(\d+)\)$/);
+  if (splitPartMatch) {
+    return {
+      type: 'attributeSplitPart',
+      attrName: splitPartMatch[1],
+      partIndex: parseInt(splitPartMatch[2], 10)
+    };
+  }
+  // attributeByName("...") — доп. поле по name
+  const attrByNameMatch = apiField.match(/^attributeByName\("([^"]*)"\)$/);
+  if (attrByNameMatch) {
+    return { type: 'attributeByName', attrName: attrByNameMatch[1] };
+  }
   // attribute(UUID) или attribute(UUID).subfield
   const attrMatch = apiField.match(/^attribute\(([a-f0-9-]+)\)(?:\.(\w+))?$/i);
   if (attrMatch) {
@@ -291,6 +302,10 @@ function transformItem(item, mapping) {
 
     if (parsed.type === 'attribute') {
       value = getAttributeValue(item.attributes, parsed.attrId, parsed.subField);
+    } else if (parsed.type === 'attributeByName') {
+      value = getAttributeValueByName(item.attributes, parsed.attrName);
+    } else if (parsed.type === 'attributeSplitPart') {
+      value = getAttributeSplitPart(item.attributes, parsed.attrName, parsed.partIndex);
     } else if (parsed.type === 'mappedAttributes') {
       value = buildMappedAttributesObject(item.attributes);
     } else if (parsed.type === 'salePrice') {

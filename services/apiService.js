@@ -200,46 +200,58 @@ class ApiService {
     try {
       const productsUrl = process.env.PRODUCTS_API_URL
         || 'https://api.moysklad.ru/api/remap/1.2/entity/product';
-
-      let allData = [];
-      let offset = 0;
       const limit = 100;
-      let hasMoreData = true;
 
-      console.log(`Запрос товаров из ${productsUrl}`);
+      const fetchProductsByArchived = async (archived) => {
+        let rows = [];
+        let offset = 0;
+        let hasMoreData = true;
+        const filter = `archived=${archived}`;
 
-      while (hasMoreData) {
-        const response = await axios.get(productsUrl, {
-          headers: {
-            'Authorization': this.getAuthHeader(),
-            'Content-Type': 'application/json',
-            'Accept-Encoding': 'gzip'
-          },
-          params: {
-            offset: offset,
-            limit: limit
+        console.log(`Запрос товаров из ${productsUrl} c filter=${filter}`);
+
+        while (hasMoreData) {
+          const response = await axios.get(productsUrl, {
+            headers: {
+              'Authorization': this.getAuthHeader(),
+              'Content-Type': 'application/json',
+              'Accept-Encoding': 'gzip'
+            },
+            params: {
+              filter: filter,
+              offset: offset,
+              limit: limit
+            }
+          });
+
+          if (response.data && response.data.rows && Array.isArray(response.data.rows)) {
+            rows = rows.concat(response.data.rows);
+            hasMoreData = response.data.rows.length >= limit;
+            offset += limit;
+          } else if (response.data && Array.isArray(response.data)) {
+            rows = rows.concat(response.data);
+            hasMoreData = response.data.length >= limit;
+            offset += limit;
+          } else {
+            hasMoreData = false;
           }
-        });
 
-        if (response.data && response.data.rows && Array.isArray(response.data.rows)) {
-          allData = allData.concat(response.data.rows);
-          hasMoreData = response.data.rows.length >= limit;
-          offset += limit;
-        } else if (response.data && Array.isArray(response.data)) {
-          allData = allData.concat(response.data);
-          hasMoreData = response.data.length >= limit;
-          offset += limit;
-        } else {
-          hasMoreData = false;
+          if (offset > 100000) {
+            console.warn(`Достигнут лимит записей (100000) для filter=${filter}`);
+            break;
+          }
         }
 
-        if (offset > 100000) {
-          console.warn('Достигнут лимит записей (100000) для товаров');
-          break;
-        }
-      }
+        console.log(`Получено ${rows.length} товаров для filter=${filter}`);
+        return rows;
+      };
 
-      console.log(`Получено ${allData.length} товаров`);
+      // Важно: сначала активные, затем архивные.
+      const activeProducts = await fetchProductsByArchived(false);
+      const archivedProducts = await fetchProductsByArchived(true);
+      const allData = activeProducts.concat(archivedProducts);
+
+      console.log(`Итого получено ${allData.length} товаров (active=${activeProducts.length}, archived=${archivedProducts.length})`);
       return allData;
     } catch (error) {
       console.error('Ошибка получения списка товаров:', error.message);

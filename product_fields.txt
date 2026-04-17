@@ -87,6 +87,95 @@ vat                                       | vat                     | INTEGER
 vatEnabled                                | vat_enabled             | BOOLEAN
 volume                                    | volume                  | FLOAT
 weight                                    | weight                  | FLOAT
-mappedAttributes                          | attributes              | JSON
+#
+# --- Доп. поля (attributes) : имя как в МойСклад ---
+attributeByName("ID Bitrix")                               | id_bitrix                         | BIGINT
+attributeByName("Акционная цена")                          | price_promo                       | BIGINT
+attributeByName("Акционная цена (спец)")                   | price_promo_special               | BIGINT
+attributeByName("Акция выходного дня")                     | weekend_promotion                 | BOOLEAN
+attributeByName("Большой ценник")                          | large_tag                         | BOOLEAN
+attributeByName("Бренд")                                   | brand                             | JSON
+attributeByName("Витрина Европейский")                     | showcase_eur                      | BIGINT
+attributeByName("Витрина КРД магазин")                     | showcase_krd_store                | BIGINT
+attributeByName("Витрина Мун")                             | showcase_mun                      | BIGINT
+attributeByName("Витрина Новослободская")                  | showcase_nov                      | BIGINT
+attributeByName("Витрина СПб")                             | showcase_spb_store                | BIGINT
+attributeByName("Витрина Таганская")                       | showcase_tag                      | BIGINT
+attributeByName("Витрина Черемушки")                       | showcase_cher                     | BIGINT
+attributeByName("Включение акции")                         | promotion_activation              | JSON
+attributeByName("Выводим")                                 | displayed                         | BOOLEAN
+attributeByName("Выключение акции")                        | promotion_deactivation            | JSON
+attributeByName("Высота (мм)")                             | height                            | BIGINT
+attributeByName("Дата завершения акции")                   | promotion_end_date                | DATE
+attributeByName("Дата начала акции")                       | promotion_start_date              | DATE
+attributeByName("Дата поступления(ручная)")                | receipt_date_manual               | DATE
+attributeByName("Дефицит")                                 | deficit                           | BOOLEAN
+attributeByName("Длина (мм)")                              | length                            | BIGINT
+attributeByName("Длинная позиция")                         | long_tail                         | BOOLEAN
+attributeByName("Зафиксировать цену офлайн")               | fix_price_offline                 | BOOLEAN
+attributeSplitPart("Категория ОЗ",0)                       | category                          | STRING(512)
+attributeSplitPart("Категория ОЗ",1)                       | subcategory                       | STRING(512)
+attributeByName("Категория филипс")                        | category_philips                  | JSON
+attributeByName("Количество к заказу лимит позиции")       | order_limit_quantity              | BIGINT
+attributeByName("Контрольная цена закупки (для скрипта)")  | price_control_purchase            | DECIMAL(15,4)
+attributeByName("Контрольная цена продажи (для скрипта)")  | price_control_sale                | DECIMAL(15,4)
+attributeByName("Маркетинговый товар, нулевая себестоимость") | marketing_product_zero_cost     | BOOLEAN
+attributeByName("матрица B2B")                             | matrix_b2b                        | BOOLEAN
+attributeByName("Матрица выставки")                        | matrix_exhibition                 | BOOLEAN
+attributeByName("матрица маркет-плейсы")                   | matrix_marketplaces               | BOOLEAN
+attributeByName("матрица онлайн")                          | matrix_online                     | BOOLEAN
+attributeByName("матрица оффлайн")                         | matrix_offline                    | BOOLEAN
+attributeByName("Место хранения")                          | storage_location                  | JSON
+attributeByName("Месяц предзаказа")                        | preorder_month                    | DATE
+attributeByName("Минимальная наценка (%)")                 | min_markup                        | BIGINT
+attributeByName("Минимальная цена (расчетная)")            | price_min_calculated              | DECIMAL(15,4)
+attributeByName("Минимальный запас Рижская")               | min_stock_rizh                    | BIGINT
+attributeByName("Минимальный запас СПб")                   | min_stock_spb                     | BIGINT
+attributeByName("МРЦ ОПТ")                                 | mrc_opt                           | BOOLEAN
+attributeByName("Наценка ОПТ(%)")                          | opt_markup                        | BIGINT
+attributeByName("Не отправлять остатки в Ozon")            | exclude_stocks_from_ozon          | BOOLEAN
+attributeByName("Не отправлять остатки в Ozon ИП Кершковский") | exclude_stocks_from_ozon_ip_kersh | BOOLEAN
+attributeByName("Не отправлять остатки и цены в OZON fbs ДокторСлон") | exclude_stocks_prices_from_ozon_fbs_ds | BOOLEAN
+attributeByName("Не участвует в синхронизации с сайтом")   | exclude_from_site_sync            | BOOLEAN
+attributeByName("Неснижаемый остаток Европейский")         | nz_eur                            | BIGINT
+attributeByName("Неснижаемый остаток КРД Магазин")         | nz_krd_store                      | BIGINT
+attributeByName("Неснижаемый остаток КРД опт")             | nz_krd_opt                        | BIGINT
+attributeByName("Неснижаемый остаток Мун")                 | nz_stock_mun                      | BIGINT
+attributeByName("Неснижаемый остаток Новослободская")      | nz_stock_nov                      | BIGINT
+attributeByName("Неснижаемый остаток Рижская")             | nz_stock_rizh                     | BIGINT
+attributeByName("Неснижаемый остаток СПб")                 | nz_stock_spb                      | BIGINT
+attributeByName("Неснижаемый остаток СПб Магазин")         | nz_stock_spb_store                | BIGINT
+attributeByName("Неснижаемый остаток Таганская")           | nz_stock_tag                      | BIGINT
+attributeByName("Неснижаемый остаток Черемушки")           | nz_stock_cher                     | BIGINT
+attributeByName("Обновить в Битрикс")                      | update_in_bitrix                  | BOOLEAN
+attributeByName("Отслеживание остатка подарка")            | track_gift_stock                  | BOOLEAN
+attributeByName("Первый день акции")                       | promotion_first_day               | JSON
+attributeByName("Порог изменения цены(%)")                 | price_change_threshold            | BIGINT
+attributeByName("Последний день акции")                    | promotion_last_day                | JSON
+attributeByName("Признак СТМ")                             | sign_stm                          | JSON
+attributeByName("Приоритет")                               | priority                          | BIGINT
+attributeByName("Приоритетная матрица")                    | priority_matrix                   | BIGINT
+attributeByName("Сегмент ABC")                             | abc_segment                       | JSON
+attributeByName("Скидка без ограничений")                  | unlimited_discount                | BOOLEAN
+attributeByName("Скрыть в Купер Мск")                      | hide_in_kuper_msk                 | BOOLEAN
+attributeByName("Скрыть в Купер СПб")                      | hide_in_kuper_spb                 | BOOLEAN
+attributeByName("Скрыть в мегамаркет")                     | hide_in_megamarket                | BOOLEAN
+attributeByName("Скрыть в Яндекс FBS")                     | hide_in_yandex_fbs                | BOOLEAN
+attributeByName("Скрыть в Яндекс FBY / FBY+")              | hide_in_yandex_fby                | BOOLEAN
+attributeByName("Скрыть в Яндекс Go Мск")                  | hide_in_yandex_go_msk             | BOOLEAN
+attributeByName("Скрыть в Яндекс Go СПб")                  | hide_in_yandex_go_spb             | BOOLEAN
+attributeByName("Скрыть на сайте")                         | hide_on_site                      | BOOLEAN
+attributeByName("Старая цена")                             | price_old                         | DECIMAL(15,4)
+attributeByName("Статус МП")                               | marketplace_status                | JSON
+attributeByName("Товар КЗ")                                | kz_product                        | BOOLEAN
+attributeByName("Товар МП")                                | mp_product                        | BOOLEAN
+attributeByName("Товар не участвует в перемещениях СПб")   | exclude_from_transfers_spb        | BOOLEAN
+attributeByName("Товар под заказ")                         | made_to_order                     | BOOLEAN
+attributeByName("Упаковка МП")                             | marketplace_packaging             | JSON
+attributeByName("Участвует в акции")                       | participates_in_promotion         | BOOLEAN
+attributeByName("Участвует в наборах")                     | participates_in_bundles           | BOOLEAN
+attributeByName("Цена для маркета")                        | price_market                      | DECIMAL(15,4)
+attributeByName("Цена продажи (сохраненная)")              | price_sale_saved                  | BIGINT
+attributeByName("Ширина (мм)")                             | width                             | BIGINT
 #
 # Примеры: attribute(uuid) | поле | тип

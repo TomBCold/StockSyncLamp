@@ -175,6 +175,7 @@ class SyncService {
 
         // Запись в БД (пакетная вставка)
         logger.info('Начало вставки в БД...');
+        // console.log(recordsToInsert[0]);                               // TODO для отладки
         const insertedRecords = await db.Stock.bulkCreate(recordsToInsert, {
           validate: true,
           ignoreDuplicates: false,
