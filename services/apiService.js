@@ -264,6 +264,136 @@ class ApiService {
   }
 
   /**
+   * Получение списка контрагентов
+   * @returns {Promise<Array>} - Массив контрагентов
+   */
+  async getCounterpartiesData() {
+    try {
+      const counterpartiesUrl = process.env.COUNTERPARTIES_API_URL
+        || 'https://api.moysklad.ru/api/remap/1.2/entity/counterparty';
+
+      let allData = [];
+      let offset = 0;
+      const limit = 1000;
+      let hasMoreData = true;
+
+      console.log(`Запрос контрагентов из ${counterpartiesUrl}`);
+
+      while (hasMoreData) {
+        const response = await axios.get(counterpartiesUrl, {
+          headers: {
+            'Authorization': this.getAuthHeader(),
+            'Content-Type': 'application/json',
+            'Accept-Encoding': 'gzip'
+          },
+          params: {
+            offset: offset,
+            limit: limit
+          }
+        });
+
+        if (response.data && response.data.rows && Array.isArray(response.data.rows)) {
+          allData = allData.concat(response.data.rows);
+          hasMoreData = response.data.rows.length >= limit;
+          offset += limit;
+        } else if (response.data && Array.isArray(response.data)) {
+          allData = allData.concat(response.data);
+          hasMoreData = response.data.length >= limit;
+          offset += limit;
+        } else {
+          hasMoreData = false;
+        }
+
+        if (offset > 5000000) {
+          console.warn('Достигнут лимит записей (5000000) для контрагентов');
+          break;
+        }
+      }
+
+      console.log(`Получено ${allData.length} контрагентов`);
+      return allData;
+    } catch (error) {
+      console.error('Ошибка получения списка контрагентов:', error.message);
+      if (error.response) {
+        console.error(`Статус ответа: ${error.response.status}`);
+        console.error('Данные ответа:', error.response.data);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Получение списка модификаций (вариантов товаров)
+   * Сначала активные, затем архивные
+   * @returns {Promise<Array>} - Массив модификаций
+   */
+  async getModificationsData() {
+    try {
+      const modificationsUrl = process.env.MODIFICATIONS_API_URL
+        || 'https://api.moysklad.ru/api/remap/1.2/entity/variant';
+      const limit = 100;
+
+      const fetchModificationsByArchived = async (archived) => {
+        let rows = [];
+        let offset = 0;
+        let hasMoreData = true;
+        const filter = `archived=${archived}`;
+
+        console.log(`Запрос модификаций из ${modificationsUrl} c filter=${filter}`);
+
+        while (hasMoreData) {
+          const response = await axios.get(modificationsUrl, {
+            headers: {
+              'Authorization': this.getAuthHeader(),
+              'Content-Type': 'application/json',
+              'Accept-Encoding': 'gzip'
+            },
+            params: {
+              filter: filter,
+              offset: offset,
+              limit: limit
+            }
+          });
+
+          if (response.data && response.data.rows && Array.isArray(response.data.rows)) {
+            rows = rows.concat(response.data.rows);
+            hasMoreData = response.data.rows.length >= limit;
+            offset += limit;
+          } else if (response.data && Array.isArray(response.data)) {
+            rows = rows.concat(response.data);
+            hasMoreData = response.data.length >= limit;
+            offset += limit;
+          } else {
+            hasMoreData = false;
+          }
+
+          if (offset > 100000) {
+            console.warn(`Достигнут лимит записей (100000) для filter=${filter}`);
+            break;
+          }
+        }
+
+        console.log(`Получено ${rows.length} модификаций для filter=${filter}`);
+        return rows;
+      };
+
+      const activeModifications = await fetchModificationsByArchived(false);
+      const archivedModifications = await fetchModificationsByArchived(true);
+      const allData = activeModifications.concat(archivedModifications);
+
+      console.log(`Итого получено ${allData.length} модификаций (active=${activeModifications.length}, archived=${archivedModifications.length})`);
+      return allData;
+    } catch (error) {
+      console.error('Ошибка получения списка модификаций:', error.message);
+      if (error.response) {
+        console.error(`Статус ответа: ${error.response.status}`);
+        console.error('Данные ответа:', error.response.data);
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Проверка доступности API
    * @returns {Promise<boolean>}
    */

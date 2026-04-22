@@ -8,6 +8,8 @@ const { readFieldMapping, transformItem } = require('../utils/fieldMapping');
 class SyncService {
   constructor() {
     this.warehousesFile = path.join(__dirname, '../warehouses.txt');
+    this.counterpartiesFieldsFile = path.join(__dirname, '../counterparty_fields.txt');
+    this.modificationsFieldsFile = path.join(__dirname, '../modification_fields.txt');
   }
 
   /**
@@ -534,6 +536,162 @@ class SyncService {
     } catch (error) {
       logger.info(`Ошибка синхронизации товаров: ${error.message}`);
       console.error('Ошибка синхронизации товаров:', error);
+      return { success: false, recordCount: 0, error: error.message };
+    }
+  }
+
+  /**
+   * Синхронизация справочника контрагентов в таблицу pbi_counterparties
+   * @returns {Promise<{success: boolean, recordCount: number, error: string}>}
+   */
+  async syncCounterparties() {
+    try {
+      logger.info('=== Начало синхронизации контрагентов ===');
+
+      const mapping = readFieldMapping(this.counterpartiesFieldsFile);
+      logger.info(`Загружен маппинг контрагентов: ${mapping.length} полей`);
+
+      const counterpartiesData = await apiService.getCounterpartiesData();
+
+      if (!counterpartiesData || counterpartiesData.length === 0) {
+        logger.info('Нет данных о контрагентах из API');
+        return { success: true, recordCount: 0, error: 'Нет данных' };
+      }
+
+      logger.info(`Получено ${counterpartiesData.length} контрагентов из API`);
+
+      const systemDate = new Date();
+      const currentDate = new Date(systemDate.getTime() + (3 * 60 * 60 * 1000));
+
+      const recordsToInsert = counterpartiesData
+        .map(item => {
+          const record = transformItem(item, mapping);
+          if (!record) return null;
+          record.syncDate = currentDate;
+          return record;
+        })
+        .filter(item => item !== null);
+
+      if (recordsToInsert.length === 0) {
+        logger.info('Не удалось обработать ни одного контрагента');
+        return { success: false, recordCount: 0, error: 'Не удалось обработать данные' };
+      }
+
+      logger.info(`Подготовлено ${recordsToInsert.length} записей контрагентов для вставки`);
+
+      const transaction = await db.sequelize.transaction();
+
+      try {
+        const deletedCount = await db.Counterparty.destroy({
+          where: {},
+          transaction
+        });
+
+        logger.info(`Удалено существующих записей контрагентов: ${deletedCount}`);
+
+        const batchSize = 500;
+        let insertedTotal = 0;
+
+        for (let i = 0; i < recordsToInsert.length; i += batchSize) {
+          const batch = recordsToInsert.slice(i, i + batchSize);
+          await db.Counterparty.bulkCreate(batch, {
+            validate: true,
+            transaction
+          });
+          insertedTotal += batch.length;
+          logger.info(`Вставлено ${insertedTotal}/${recordsToInsert.length} контрагентов`);
+        }
+
+        await transaction.commit();
+        logger.info('Транзакция контрагентов успешно завершена');
+      } catch (error) {
+        await this.safeRollback(transaction, 'контрагентов');
+        throw error;
+      }
+
+      logger.info(`=== Синхронизация контрагентов завершена: ${recordsToInsert.length} записей ===`);
+      return { success: true, recordCount: recordsToInsert.length, error: '' };
+    } catch (error) {
+      logger.info(`Ошибка синхронизации контрагентов: ${error.message}`);
+      console.error('Ошибка синхронизации контрагентов:', error);
+      return { success: false, recordCount: 0, error: error.message };
+    }
+  }
+
+  /**
+   * Синхронизация справочника модификаций в таблицу pbi_modifications
+   * @returns {Promise<{success: boolean, recordCount: number, error: string}>}
+   */
+  async syncModifications() {
+    try {
+      logger.info('=== Начало синхронизации модификаций ===');
+
+      const mapping = readFieldMapping(this.modificationsFieldsFile);
+      logger.info(`Загружен маппинг модификаций: ${mapping.length} полей`);
+
+      const modificationsData = await apiService.getModificationsData();
+
+      if (!modificationsData || modificationsData.length === 0) {
+        logger.info('Нет данных о модификациях из API');
+        return { success: true, recordCount: 0, error: 'Нет данных' };
+      }
+
+      logger.info(`Получено ${modificationsData.length} модификаций из API`);
+
+      const systemDate = new Date();
+      const currentDate = new Date(systemDate.getTime() + (3 * 60 * 60 * 1000));
+
+      const recordsToInsert = modificationsData
+        .map(item => {
+          const record = transformItem(item, mapping);
+          if (!record) return null;
+          record.syncDate = currentDate;
+          return record;
+        })
+        .filter(item => item !== null);
+
+      if (recordsToInsert.length === 0) {
+        logger.info('Не удалось обработать ни одной модификации');
+        return { success: false, recordCount: 0, error: 'Не удалось обработать данные' };
+      }
+
+      logger.info(`Подготовлено ${recordsToInsert.length} записей модификаций для вставки`);
+
+      const transaction = await db.sequelize.transaction();
+
+      try {
+        const deletedCount = await db.Modification.destroy({
+          where: {},
+          transaction
+        });
+
+        logger.info(`Удалено существующих записей модификаций: ${deletedCount}`);
+
+        const batchSize = 500;
+        let insertedTotal = 0;
+
+        for (let i = 0; i < recordsToInsert.length; i += batchSize) {
+          const batch = recordsToInsert.slice(i, i + batchSize);
+          await db.Modification.bulkCreate(batch, {
+            validate: true,
+            transaction
+          });
+          insertedTotal += batch.length;
+          logger.info(`Вставлено ${insertedTotal}/${recordsToInsert.length} модификаций`);
+        }
+
+        await transaction.commit();
+        logger.info('Транзакция модификаций успешно завершена');
+      } catch (error) {
+        await this.safeRollback(transaction, 'модификаций');
+        throw error;
+      }
+
+      logger.info(`=== Синхронизация модификаций завершена: ${recordsToInsert.length} записей ===`);
+      return { success: true, recordCount: recordsToInsert.length, error: '' };
+    } catch (error) {
+      logger.info(`Ошибка синхронизации модификаций: ${error.message}`);
+      console.error('Ошибка синхронизации модификаций:', error);
       return { success: false, recordCount: 0, error: error.message };
     }
   }

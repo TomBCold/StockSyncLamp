@@ -22,6 +22,8 @@ db.sequelize = sequelize;
 // Импорт моделей
 db.Stock = require('./Stock')(sequelize, Sequelize);
 db.Product = require('./Product')(sequelize, Sequelize);
+db.Counterparty = require('./Counterparty')(sequelize, Sequelize);
+db.Modification = require('./Modification')(sequelize, Sequelize);
 
 module.exports = db;
 

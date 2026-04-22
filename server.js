@@ -43,6 +43,8 @@ app.get('/', (req, res) => {
       syncManual: '/sync/manual (остатки + товары)',
       syncStock: '/sync/stock (только остатки)',
       syncProducts: '/sync/products (только товары)',
+      syncCounterparties: '/sync/counterparties (только контрагенты)',
+      syncModifications: '/sync/modifications (только модификации)',
       syncRetrospective: '/sync/retrospective',
       syncStatus: '/sync/status'
     }
@@ -227,6 +229,58 @@ app.post('/sync/products', async (req, res) => {
   }
 });
 
+// Ручной запуск синхронизации контрагентов
+app.post('/sync/counterparties', async (req, res) => {
+  try {
+    logger.info('Запущена ручная синхронизация контрагентов');
+
+    syncService.syncCounterparties()
+      .then(result => {
+        logger.info(`Синхронизация контрагентов завершена: ${JSON.stringify(result)}`);
+      })
+      .catch(error => {
+        logger.info(`Ошибка при синхронизации контрагентов: ${error.message}`);
+      });
+
+    res.json({
+      message: 'Синхронизация контрагентов запущена',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.info(`Ошибка запуска синхронизации контрагентов: ${error.message}`);
+    res.status(500).json({
+      error: 'Ошибка запуска синхронизации контрагентов',
+      message: error.message
+    });
+  }
+});
+
+// Ручной запуск синхронизации модификаций
+app.post('/sync/modifications', async (req, res) => {
+  try {
+    logger.info('Запущена ручная синхронизация модификаций');
+
+    syncService.syncModifications()
+      .then(result => {
+        logger.info(`Синхронизация модификаций завершена: ${JSON.stringify(result)}`);
+      })
+      .catch(error => {
+        logger.info(`Ошибка при синхронизации модификаций: ${error.message}`);
+      });
+
+    res.json({
+      message: 'Синхронизация модификаций запущена',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.info(`Ошибка запуска синхронизации модификаций: ${error.message}`);
+    res.status(500).json({
+      error: 'Ошибка запуска синхронизации модификаций',
+      message: error.message
+    });
+  }
+});
+
 // Статус последней синхронизации (заглушка для будущего функционала)
 app.get('/sync/status', (req, res) => {
   res.json({
@@ -319,6 +373,8 @@ async function startServer() {
       logger.info(`  - GET  http://localhost:${PORT}/`);
       logger.info(`  - GET  http://localhost:${PORT}/health`);
       logger.info(`  - POST http://localhost:${PORT}/sync/manual`);
+      logger.info(`  - POST http://localhost:${PORT}/sync/counterparties`);
+      logger.info(`  - POST http://localhost:${PORT}/sync/modifications`);
       logger.info(`  - GET  http://localhost:${PORT}/sync/status`);
     });
   } catch (error) {

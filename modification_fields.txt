@@ -1,0 +1,38 @@
+# Маппинг полей модификаций: МойСклад API → БД (таблица pbi_modifications)
+# Формат: поле_api | поле_бд | тип_данных [ | трансформация ]
+#
+# Для meta.href и *.meta.href автоматически извлекается UUID из URL
+#
+accountId                                 | account_id              | STRING(255)
+archived                                  | archived                | BOOLEAN
+barcodes                                  | barcodes                | JSON
+buyPrice.value                            | buy_price               | DECIMAL(15,2) | /100
+buyPrice.currency.meta.href               | buy_price_currency      | STRING(255)
+code                                      | code                    | STRING(255)
+description                               | description             | TEXT
+discountProhibited                        | discount_prohibited     | BOOLEAN
+externalCode                              | external_code           | STRING(255)
+id                                        | uuid                      | STRING(255)
+meta.href                                 | id_href                 | STRING(255)
+minPrice.value                            | min_price               | DECIMAL(15,2) | /100
+minPrice.currency.meta.href               | min_price_currency      | STRING(255)
+name                                      | name                    | STRING(255)
+packs.0.id                                | pack_id                 | STRING(36)
+packs.0.uom.meta.href                     | pack_uom                | STRING(255)
+packs.0.barcodes                          | pack_barcode            | JSON
+packs.0.quantity                          | pack_quantity           | FLOAT
+product.meta.href                         | product_id              | STRING(255)
+salePrice("Цена продажи")                 | price_sale              | DECIMAL(15,2) | /100
+salePrice("Цена на выставке")             | price_exhibition        | DECIMAL(15,2) | /100
+salePrice("Цена Опт")                     | price_opt               | DECIMAL(15,2) | /100
+salePrice("Цена Яндекс FBS")              | price_yandex_fbs        | DECIMAL(15,2) | /100
+salePrice("Цена Яндекс Go Мск")           | price_yandex_go_msk     | DECIMAL(15,2) | /100
+salePrice("Цена Яндекс Go СПб")           | price_yandex_go_spb     | DECIMAL(15,2) | /100
+salePrice("Цена Яндекс FBY / FBY+")       | price_yandex_fby        | DECIMAL(15,2) | /100
+salePrice("Цена Купер")                   | price_kuper             | DECIMAL(15,2) | /100
+salePrice("Цена продажи офлайн")          | price_offline_sale      | DECIMAL(15,2) | /100
+salePrice("Базовая цена / РРЦ")           | price_base_rrc          | DECIMAL(15,2) | /100
+salePrice("Цена Мегамаркет")              | price_megamarket        | DECIMAL(15,2) | /100
+salePrice("Цена бонусной программы СТОМ") | price_stom_bonus        | DECIMAL(15,2) | /100
+things                                    | things                  | JSON
+updated                                   | updated                 | DATE

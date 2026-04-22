@@ -64,12 +64,12 @@ function parseDataType(typeStr) {
  * Чтение и парсинг файла маппинга полей
  * @returns {Array<{apiField: string, dbColumn: string, dataType: string, transform: string|null}>}
  */
-function readFieldMapping() {
-  if (!fs.existsSync(FIELD_MAP_FILE)) {
-    throw new Error(`Файл маппинга не найден: ${FIELD_MAP_FILE}`);
+function readFieldMapping(mappingFilePath = FIELD_MAP_FILE) {
+  if (!fs.existsSync(mappingFilePath)) {
+    throw new Error(`Файл маппинга не найден: ${mappingFilePath}`);
   }
 
-  const content = fs.readFileSync(FIELD_MAP_FILE, 'utf8');
+  const content = fs.readFileSync(mappingFilePath, 'utf8');
   const lines = content
     .split('\n')
     .map(line => line.trim())
@@ -248,6 +248,15 @@ function parseApiField(apiField) {
       partIndex: parseInt(splitPartMatch[2], 10)
     };
   }
+  // attributeByName("...").name — доп. поле по name, подполе value.name
+  const attrByNameSubfieldMatch = apiField.match(/^attributeByName\("([^"]*)"\)\.(\w+)$/);
+  if (attrByNameSubfieldMatch) {
+    return {
+      type: 'attributeByName',
+      attrName: attrByNameSubfieldMatch[1],
+      subField: attrByNameSubfieldMatch[2]
+    };
+  }
   // attributeByName("...") — доп. поле по name
   const attrByNameMatch = apiField.match(/^attributeByName\("([^"]*)"\)$/);
   if (attrByNameMatch) {
@@ -304,6 +313,9 @@ function transformItem(item, mapping) {
       value = getAttributeValue(item.attributes, parsed.attrId, parsed.subField);
     } else if (parsed.type === 'attributeByName') {
       value = getAttributeValueByName(item.attributes, parsed.attrName);
+      if (parsed.subField === 'name' && value && typeof value === 'object') {
+        value = value.name !== undefined ? value.name : null;
+      }
     } else if (parsed.type === 'attributeSplitPart') {
       value = getAttributeSplitPart(item.attributes, parsed.attrName, parsed.partIndex);
     } else if (parsed.type === 'mappedAttributes') {

@@ -1,0 +1,52 @@
+# Маппинг полей контрагентов: МойСклад API → БД (таблица pbi_counterparties)
+# Формат: поле_api | поле_бд | тип_данных [ | трансформация ]
+#
+# Способы указания поля API:
+#   name                              — простое поле
+#   meta.href                         — вложенное поле через точку
+#   attributeByName("Имя")            — значение доп. поля по точному name
+#   attributeByName("Имя").name       — value.name для customentity
+#
+# Для meta.href и *.meta.href автоматически извлекается UUID из URL
+#
+accountId                                         | account_id                   | STRING(255)
+actualAddress                                     | actual_address               | STRING(255)
+actualAddressFull.city                            | actual_address_city          | STRING(255)
+archived                                          | archived                     | BOOLEAN
+bonusPoints                                       | bonus_points                 | INTEGER
+bonusProgram.meta.href                            | bonus_program                | STRING(255)
+code                                              | code                         | STRING(255)
+companyType                                       | company_type                 | STRING(255)
+created                                           | created                      | DATE
+description                                       | description                  | TEXT
+discountCardNum                                   | discount_card_number         | STRING(255)
+externalCode                                      | external_code                | STRING(255)
+group.meta.href                                   | group_href                   | STRING(255)
+id                                                | uuid                         | STRING(255)
+meta.href                                         | id_href                      | STRING(255)
+name                                              | name                         | STRING(255)
+owner.meta.href                                   | owner_href                   | STRING(255)
+priceType.name                                    | price_type                   | STRING(255)
+salesAmount                                       | sales_amount                 | INTEGER
+shared                                            | shared                       | BOOLEAN
+state.name                                        | state                        | STRING(255)
+tags                                              | tags                         | JSON
+updated                                           | updated                      | DATE
+#
+# Доп. поля (attributes) — каждый атрибут в отдельную колонку:
+attributeByName("Название клиники")              | clinic_name                  | STRING(255)
+attributeByName("Ретро-бонус, %")                | retro_bonus                  | FLOAT
+attributeByName("Контрагент-приемка").name       | counterparty_acceptance      | STRING(255)
+attributeByName("mango_id")                      | mango_id                     | BIGINT
+attributeByName("ОТСРОЧКА (календарные дни)")    | postponement                 | BIGINT
+attributeByName("КОМИССИОНЕР")                   | commission                   | BOOLEAN
+attributeByName("Промокод")                      | promocode                    | STRING(255)
+attributeByName("Дата создания скидки")          | discount_creation_date       | STRING(255)
+attributeByName("Источник").name                 | leed_source                  | STRING(255)
+attributeByName("Установлено приложение")        | app_installed                | BOOLEAN
+attributeByName("Подписка на триггерные рассылки") | subscribe_trigger_newsletters | BOOLEAN
+attributeByName("Подписка на новости и скидки")  | subscribe_news_discounts     | BOOLEAN
+attributeByName("Подписка для врачей и клиник")  | subscribe_doctors_clinics    | BOOLEAN
+attributeByName("Дата посещения мероприятия")    | date_event_visit             | STRING(255)
+attributeByName("Регистрационный номер участника") | registration_number         | BIGINT
+attributeByName("Декабрь 23")                    | december_23                  | STRING(255)
