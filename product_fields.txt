@@ -94,7 +94,7 @@ attributeByName("Акционная цена")                          | price_
 attributeByName("Акционная цена (спец)")                   | price_promo_special               | BIGINT
 attributeByName("Акция выходного дня")                     | weekend_promotion                 | BOOLEAN
 attributeByName("Большой ценник")                          | large_tag                         | BOOLEAN
-attributeByName("Бренд")                                   | brand                             | JSON
+attributeByName("Бренд").name                              | brand                             | STRING(255)
 attributeByName("Витрина Европейский")                     | showcase_eur                      | BIGINT
 attributeByName("Витрина КРД магазин")                     | showcase_krd_store                | BIGINT
 attributeByName("Витрина Мун")                             | showcase_mun                      | BIGINT
@@ -102,9 +102,9 @@ attributeByName("Витрина Новослободская")                  
 attributeByName("Витрина СПб")                             | showcase_spb_store                | BIGINT
 attributeByName("Витрина Таганская")                       | showcase_tag                      | BIGINT
 attributeByName("Витрина Черемушки")                       | showcase_cher                     | BIGINT
-attributeByName("Включение акции")                         | promotion_activation              | JSON
+attributeByName("Включение акции").name                    | promotion_activation              | STRING(255)
 attributeByName("Выводим")                                 | displayed                         | BOOLEAN
-attributeByName("Выключение акции")                        | promotion_deactivation            | JSON
+attributeByName("Выключение акции").name                   | promotion_deactivation            | STRING(255)
 attributeByName("Высота (мм)")                             | height                            | BIGINT
 attributeByName("Дата завершения акции")                   | promotion_end_date                | DATE
 attributeByName("Дата начала акции")                       | promotion_start_date              | DATE
@@ -149,13 +149,13 @@ attributeByName("Неснижаемый остаток Таганская")     
 attributeByName("Неснижаемый остаток Черемушки")           | nz_stock_cher                     | BIGINT
 attributeByName("Обновить в Битрикс")                      | update_in_bitrix                  | BOOLEAN
 attributeByName("Отслеживание остатка подарка")            | track_gift_stock                  | BOOLEAN
-attributeByName("Первый день акции")                       | promotion_first_day               | JSON
+attributeByName("Первый день акции").name                  | promotion_first_day               | STRING(255)
 attributeByName("Порог изменения цены(%)")                 | price_change_threshold            | BIGINT
-attributeByName("Последний день акции")                    | promotion_last_day                | JSON
-attributeByName("Признак СТМ")                             | sign_stm                          | JSON
+attributeByName("Последний день акции").name               | promotion_last_day                | STRING(255)
+attributeByName("Признак СТМ").name                        | sign_stm                          | STRING(255)
 attributeByName("Приоритет")                               | priority                          | BIGINT
 attributeByName("Приоритетная матрица")                    | priority_matrix                   | BIGINT
-attributeByName("Сегмент ABC")                             | abc_segment                       | JSON
+attributeByName("Сегмент ABC").name                        | abc_segment                       | STRING(255)
 attributeByName("Скидка без ограничений")                  | unlimited_discount                | BOOLEAN
 attributeByName("Скрыть в Купер Мск")                      | hide_in_kuper_msk                 | BOOLEAN
 attributeByName("Скрыть в Купер СПб")                      | hide_in_kuper_spb                 | BOOLEAN
@@ -166,12 +166,12 @@ attributeByName("Скрыть в Яндекс Go Мск")                  | hid
 attributeByName("Скрыть в Яндекс Go СПб")                  | hide_in_yandex_go_spb             | BOOLEAN
 attributeByName("Скрыть на сайте")                         | hide_on_site                      | BOOLEAN
 attributeByName("Старая цена")                             | price_old                         | DECIMAL(15,4)
-attributeByName("Статус МП")                               | marketplace_status                | JSON
+attributeByName("Статус МП").name                          | marketplace_status                | STRING(255)
 attributeByName("Товар КЗ")                                | kz_product                        | BOOLEAN
 attributeByName("Товар МП")                                | mp_product                        | BOOLEAN
 attributeByName("Товар не участвует в перемещениях СПб")   | exclude_from_transfers_spb        | BOOLEAN
 attributeByName("Товар под заказ")                         | made_to_order                     | BOOLEAN
-attributeByName("Упаковка МП")                             | marketplace_packaging             | JSON
+attributeByName("Упаковка МП").name                        | marketplace_packaging             | STRING(255)
 attributeByName("Участвует в акции")                       | participates_in_promotion         | BOOLEAN
 attributeByName("Участвует в наборах")                     | participates_in_bundles           | BOOLEAN
 attributeByName("Цена для маркета")                        | price_market                      | DECIMAL(15,4)

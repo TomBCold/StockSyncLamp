@@ -496,7 +496,6 @@ class SyncService {
       }
 
       logger.info(`Подготовлено ${recordsToInsert.length} записей товаров для вставки`);
-      console.log(recordsToInsert);
 
       // Используем транзакцию: очищаем таблицу и вставляем заново
       const transaction = await db.sequelize.transaction();
